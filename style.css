@@ -1,0 +1,156 @@
+:root {
+  --page: #f6f7f8;
+  --blue: #0072ce;
+  --blue-button: #006fbf;
+  --blue-button-hover: #005a9c;
+  --text: #202122;
+  --field-border: #6e7477;
+  --secondary: #e3e9f1;
+  --secondary-hover: #d3dbe6;
+  --rule: #cdd5dc;
+}
+
+html {
+  scroll-padding-bottom: 110px;
+}
+
+body {
+  margin: 0;
+  font-family: Lato, "Segoe UI", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--page);
+}
+
+.top-bar {
+  background: #ffffff;
+  border-top: 5px solid var(--blue-button);
+  padding: 16px 32px;
+}
+
+.top-bar .site-name {
+  font-size: 1.6rem;
+}
+
+.nav-bar {
+  background: var(--blue);
+  color: #ffffff;
+  padding: 14px 32px;
+  font-size: 1.1rem;
+}
+
+main {
+  padding: 0 32px 130px;
+}
+
+h1 {
+  margin: 24px 0 32px;
+  font-size: 2.6rem;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+h2 {
+  margin: 0 0 24px;
+  font-size: 2rem;
+  font-weight: 400;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+textarea {
+  width: 100%;
+  height: 360px;
+  box-sizing: border-box;
+  padding: 12px;
+  font: inherit;
+  background: #ffffff;
+  border: 1px solid var(--field-border);
+  border-radius: 6px;
+}
+
+button {
+  padding: 10px 24px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.primary {
+  color: #ffffff;
+  background: var(--blue-button);
+}
+
+.primary:hover {
+  background: var(--blue-button-hover);
+}
+
+.secondary {
+  color: var(--text);
+  background: var(--secondary);
+}
+
+.secondary:hover {
+  background: var(--secondary-hover);
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid var(--secondary);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.card h2 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .columns {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+.action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 12px;
+  padding: 14px 32px;
+  background: #ffffff;
+  border-top: 1px solid var(--rule);
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
+}
+
+:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 2px;
+}
+
+.status {
+  color: #4a4d4e;
+  font-size: 0.9rem;
+}
