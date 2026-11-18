@@ -72,6 +72,7 @@ textarea {
   box-sizing: border-box;
   padding: 12px;
   font: inherit;
+  font-size: 1.1rem;
   background: #ffffff;
   border: 1px solid var(--field-border);
   border-radius: 6px;
@@ -163,4 +164,22 @@ button {
 .status {
   color: #4a4d4e;
   font-size: 0.9rem;
+}
+
+/* -- Hidden on screen, still read aloud by screen readers (the next two style groups) -- */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+textarea::placeholder {
+  color: var(--field-border);
+  opacity: 1;
 }
