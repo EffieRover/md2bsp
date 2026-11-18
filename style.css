@@ -3,6 +3,7 @@
   --blue: #0072ce;
   --blue-button: #006fbf;
   --blue-button-hover: #005a9c;
+  --gold: #c99700;
   --text: #202122;
   --field-border: #6e7477;
   --secondary: #e3e9f1;
@@ -23,9 +24,10 @@ body {
   background: var(--page);
 }
 
+/* --- the tiny bar at the very top of the web page -- */
 .top-bar {
   background: #ffffff;
-  border-top: 5px solid var(--blue-button);
+  border-top: 3px solid var(--gold);
   padding: 16px 32px;
 }
 
