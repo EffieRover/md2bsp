@@ -96,6 +96,14 @@ button {
   background: var(--blue-button-hover);
 }
 
+/* --- disabled buttons should be grey and unclickable --- */
+.primary:disabled,
+.primary:disabled:hover {
+  color: #6e7477;
+  background: var(--secondary);
+  cursor: not-allowed;
+}
+
 .secondary {
   color: var(--text);
   background: var(--secondary);
