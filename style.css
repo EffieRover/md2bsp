@@ -35,11 +35,31 @@ body {
   font-size: 1.6rem;
 }
 
+/* -- the next few items handle the progressive menu bar at the top -- */
 .nav-bar {
   background: var(--blue);
   color: #ffffff;
   padding: 14px 32px;
   font-size: 1.1rem;
+}
+
+.steps {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps li {
+  padding: 4px 14px;
+  border-radius: 4px;
+}
+
+.steps li[aria-current="step"] {
+  background: #ffffff;
+  color: var(--blue);
+  font-weight: 700;
 }
 
 main {
