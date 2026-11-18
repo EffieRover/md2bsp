@@ -1,6 +1,7 @@
 from pyscript import document, when
 
-document.getElementById("status").innerText = "Python is alive (v2)."
+document.getElementById("status").innerText = "Python is ready."
+document.getElementById("go-button").disabled = False   # Python is ready, so turn the button on
 
 @when("click", "#go-button")
 def chunk_it(event):
