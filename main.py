@@ -1,6 +1,6 @@
 from pyscript import document, when
 
-document.getElementById("status").innerText = "Python is alive."
+document.getElementById("status").innerText = "Python is alive (v2)."
 
 @when("click", "#go-button")
 def chunk_it(event):
