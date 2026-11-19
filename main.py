@@ -1,5 +1,5 @@
 from pyscript import document, when, window
-from md2bsp_web import text_to_boxes, box_to_html, box_type_name, change_box_type, BOX_TYPE_CHOICES, find_issues, get_box_lines, edit_box_text
+from md2bsp_web import text_to_boxes, box_to_html, box_type_name, change_box_type, BOX_TYPE_CHOICES, find_issues, box_to_editor_text, edit_box_text
 
 document.getElementById("status").innerText = "Python is ready."
 document.getElementById("go-button").disabled = False   # Python is ready, so turn the button on
@@ -80,6 +80,12 @@ def make_box_frame(number, box):
     editor.className = "box-editor"
     editor.setAttribute("aria-label", f"Text of box {number}")
     editor.hidden = True
+    
+    hint = document.createElement("p")          # a one-line tip that only shows while a list box is being edited
+    hint.id = f"hint-{number}"
+    hint.className = "box-hint"
+    hint.innerText = "Start each list item with a dash. Numbers are added for you."
+    hint.hidden = True
 
     preview = document.createElement("div")     # the box's words, shown the way they'll look on the page
     preview.className = "preview"
@@ -91,6 +97,7 @@ def make_box_frame(number, box):
     toolbar.appendChild(edit_button)
     frame.appendChild(toolbar)
     frame.appendChild(preview)
+    frame.appendChild(hint)
     frame.appendChild(editor)
     return frame
 
@@ -145,6 +152,8 @@ def type_changed(event):
 # --- flip one box between "looking at the preview" and "typing in the text box" ---
 def set_editing_look(number, is_editing):
     document.getElementById(f"editor-{number}").hidden = not is_editing
+    if not is_editing:
+        document.getElementById(f"hint-{number}").hidden = True
     document.getElementById(f"preview-{number}").hidden = is_editing
     document.getElementById(f"type-{number}").disabled = is_editing     # no relabeling while typing
     button = document.getElementById(f"edit-{number}")
@@ -159,9 +168,15 @@ def set_editing_look(number, is_editing):
 
 # --- Edit was clicked: show the box's words in a text box and put the cursor there ---
 def start_editing(number):
-    lines = get_box_lines(state["boxes"][number - 1])
+    box = state["boxes"][number - 1]
     editor = document.getElementById(f"editor-{number}")
-    editor.value = "\n".join(lines)
+    editor.value = box_to_editor_text(box)
+    is_list = box_type_name(box) == "ul" or box_type_name(box) == "ol"
+    document.getElementById(f"hint-{number}").hidden = not is_list    # the tip only matters for lists
+    if is_list:
+        editor.setAttribute("aria-describedby", f"hint-{number}")     # screen readers hear the tip too
+    else:
+        editor.removeAttribute("aria-describedby")
     set_editing_look(number, True)
     editor.style.height = "auto"                             # then grow to fit the words
     editor.style.height = str(editor.scrollHeight + 4) + "px"
