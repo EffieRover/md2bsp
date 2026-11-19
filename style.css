@@ -200,7 +200,8 @@ button {
 
 /* -- Text (data entry) boxes: the focus ring IS the border, like Brightspace (blue, 2px) -- */
 textarea:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible {
   outline: none;
   border-color: var(--blue-button);
   box-shadow: 0 0 0 1px var(--blue-button);   /* adds a second pixel so the border reads as 2px without shifting the layout */
