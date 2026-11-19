@@ -71,7 +71,8 @@ def make_box_frame(number, box):
     edit_button.className = "secondary edit-toggle"
     edit_button.setAttribute("data-box", str(number))
     edit_button.setAttribute("aria-label", f"Edit text of box {number}")
-    edit_button.innerText = "Edit"
+    edit_button.innerHTML = '<span class="fas fa-fw fa-pencil-alt" aria-hidden="true"></span>'
+    edit_button.title = "Edit"                  # the tooltip for mouse users
 
     editor = document.createElement("textarea") # hidden until Edit is clicked; holds the box's raw words
     editor.id = f"editor-{number}"
@@ -147,10 +148,12 @@ def set_editing_look(number, is_editing):
     document.getElementById(f"type-{number}").disabled = is_editing     # no relabeling while typing
     button = document.getElementById(f"edit-{number}")
     if is_editing:
-        button.innerText = "Done"
+        button.innerHTML = '<span class="fas fa-fw fa-check" aria-hidden="true"></span>'
+        button.title = "Done"
         button.setAttribute("aria-label", f"Done editing box {number}")
     else:
-        button.innerText = "Edit"
+        button.innerHTML = '<span class="fas fa-fw fa-pencil-alt" aria-hidden="true"></span>'
+        button.title = "Edit"
         button.setAttribute("aria-label", f"Edit text of box {number}")
 
 # --- Edit was clicked: show the box's words in a text box and put the cursor there ---
