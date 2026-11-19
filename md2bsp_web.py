@@ -67,6 +67,21 @@ JUNK_TO_PLAIN = {                           # get rid of Microsoft "smart" bulls
     "\ufeff": "",                           # byte order mark, sometimes shows up at the start of a file
 }
 
+# --- THE BOX TYPES AN INSTRUCTOR CAN PICK FROM IN THE DROPDOWN -------------------------------------------------------
+# --- each choice is (the short name we use in code, the words the instructor sees) ---
+
+BOX_TYPE_CHOICES = [
+    ("paragraph", "Paragraph"),
+    ("h1", "Heading 1"),
+    ("h2", "Heading 2"),
+    ("h3", "Heading 3"),
+    ("h4", "Heading 4"),
+    ("h5", "Heading 5"),
+    ("h6", "Heading 6"),
+    ("ul", "Bulleted list"),
+    ("ol", "Numbered list"),
+]
+
 # --- READING THE INPUT FILE ------------------------------------------------------------------------------------------
 # --- Read a text file, file_name, and return everything in it as one piece of text ---
 # --- with open ... opens the file and closes it when we're done; utf-8 tells py how to read special characters ---
@@ -397,6 +412,45 @@ def write_file(file_name, text):
             f"Can't save '{file_name}' due to permissions error.\n"
         )
 
+# --- WHAT TYPE IS THIS BOX RIGHT NOW? RETURN ITS SHORT NAME (SO THE DROPDOWN CAN START ON THE RIGHT CHOICE) ---------
+
+def box_type_name(box):
+
+    kind = box["kind"]
+
+    if kind == "heading":
+        return "h" + str(box["level"])      # heading level 2 becomes "h2"
+
+    if kind == "list":
+        if box["ordered"]:
+            return "ol"
+        return "ul"
+
+    return "paragraph"                      # everything else is a paragraph
+
+# --- THE INSTRUCTOR PICKED A NEW TYPE: RETURN A NEW BOX WITH THE SAME WORDS, RELABELED ------------------------------
+# --- lists keep one item per line; headings and paragraphs get all the words in one piece ---
+
+def change_box_type(box, type_name):
+
+    if box["kind"] == "list":               # lines = the words in the box, one string per line
+        lines = box["items"]
+    else:
+        lines = box["text"].splitlines()
+
+    one_piece = " ".join(line.strip() for line in lines)    # all the words glued together, for headings and paragraphs
+
+    if type_name == "paragraph":
+        return make_paragraph(one_piece)
+
+    if type_name == "ul" or type_name == "ol":
+        return {"kind": "list", "ordered": type_name == "ol", "items": lines}
+                                            # ordered is True only when they picked the numbered list
+
+    if type_name.startswith("h"):           # h1 through h6; the second character is the level
+        return {"kind": "heading", "level": int(type_name[1]), "text": one_piece}
+
+    return box                              # we don't know that type, so leave the box alone
 
 # --- PHASE ONE AS ONE CALL: RAW MARKDOWN IN, LIST OF BOXES OUT -------------------------------------------------------
 # --- cleans the text, fixes bare urls, splits it into chunks, and puts each chunk in a labeled box ---
