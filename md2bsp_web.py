@@ -42,6 +42,7 @@ import os                                   # allows us to ask for device folder
 import sys                                  # allows us to stop the program with a message
 from html import escape                     # make text safe to put inside HTML / sanitize it
 import math                                 # cuz we be calculatin' reading time
+from urllib.parse import urlparse           # chops a web address into its parts (host, path, etc)
 
 # --- SETTINGS --------------------------------------------------------------------------------------------------------
 
@@ -118,11 +119,43 @@ def clean_text(text):
 
     return text
 
+# --- WHAT SHOULD A BARE LINK SAY UNTIL A HUMAN FIXES IT? THE WEB ADDRESS'S SITE NAME ----------------------------------
+# --- www.genesee.edu/blah/page.html becomes genesee.edu; subdomains stay (library.genesee.edu) so links are tellable apart ---
+
+def domain_label(url):
+
+    host = urlparse(url).hostname           # hostname is lowercase and has no port; it's None if the url is garbage
+    if not host:
+        return "link"
+    if host.startswith("www."):
+        host = host[4:]                     # www tells nobody anything
+    return host
+
+# --- SHRINK LINK TEXT DOWN SO WE CAN COMPARE IT TO A WEB ADDRESS -----------------------------------------------------
+# --- lowercase, no http(s)://, no www., no slash on the end ---
+
+def plain_link_text(text):
+
+    text = text.strip().lower()
+    for prefix in ("https://", "http://"):
+        if text.startswith(prefix):
+            text = text[len(prefix):]
+    if text.startswith("www."):
+        text = text[4:]
+    return text.rstrip("/")
+
+# --- IS THIS LINK TEXT USELESS TO A HUMAN? ---------------------------------------------------------------------------
+# --- yes if it's empty, says "missing text", or is just the site name or web address; that's a link that doesn't say where it goes ---
+
+def link_text_is_weak(text, url):
+
+    plain = plain_link_text(text)
+    return plain in ("", "missing text", domain_label(url), plain_link_text(url))
 
 # --- TURN BARE URLS INTO PROPER MARKDOWN LINKS -----------------------------------------------------------------------
-# --- finds web addresses sitting loose in the text and wraps them as [missing text](url) so every link looks the same ---
-# --- "missing text" is a flag: a human has to replace it with real words before this ships ---
-# --- the format [text goes here](url goes here) is standard markdown that allows ADA compliant links ---
+# --- finds web addresses sitting loose in the text and wraps them as [site name](url) so every link looks the same ---
+# --- the site name is a placeholder: a human has to replace it with real words, and find_issues nags until they do ---
+# --- the format [text goes here](url goes here) is standard markdown, and it lets a link say where it goes ---
 
 def structure_bare_urls(text):
 
@@ -141,8 +174,8 @@ def structure_bare_urls(text):
                     trailing = word[-1] + trailing # if the next character after the url is punctuation, save it in trailing
                     word = word[:-1]            # and peel that punctuation off the original url
 
-                words[i] = f"[missing text]({word})" + trailing   # wrap the bare url, then put the punctuation back on the end
-
+                words[i] = f"[{domain_label(word)}]({word})" + trailing   # wrap the bare url, then put the punctuation back on the end
+                
         fixed_lines.append(" ".join(words))     # glue the words back into a line
 
     return "\n".join(fixed_lines)               # glue the lines back into a file
@@ -268,7 +301,7 @@ def format_inline(text):
             rest = rest[url_seam_position + 2:]   # and keep looking through the rest of the pile
             continue
 
-        visible_link_text = rest[open_bracket_position + 1:url_seam_position].strip()
+        visible_link_text = domain_label(url)
         url = rest[url_seam_position + 2:close_paren_position].replace('"', "%22")
 
         if visible_link_text == "":
@@ -452,6 +485,50 @@ def change_box_type(box, type_name):
         return box
     new_box["lines"] = lines
     return new_box
+
+# --- FIND EVERY [TEXT](URL) IN A PIECE OF TEXT: RETURN A LIST OF (TEXT, URL) PAIRS ----------------------------------
+# --- same hunt as format_inline, but on raw text, and it only reports; it doesn't change anything ---
+
+def find_links(text):
+
+    links = []
+    rest = text
+    while True:
+        url_seam_position = rest.find("](http")
+        if url_seam_position == -1:
+            break
+        open_bracket_position = rest.rfind("[", 0, url_seam_position)
+        close_paren_position = rest.find(")", url_seam_position)
+        if open_bracket_position == -1 or close_paren_position == -1:
+            rest = rest[url_seam_position + 2:]     # not a link; keep looking past it
+            continue
+        link_text = rest[open_bracket_position + 1:url_seam_position]
+        url = rest[url_seam_position + 2:close_paren_position]
+        links.append((link_text, url))
+        rest = rest[close_paren_position + 1:]
+    return links
+
+# --- WALK THE BOXES AND LIST EVERYTHING AN INSTRUCTOR SHOULD FIX ------------------------------------------------------
+# --- returns a list of plain sentences, each starting with the box number so the instructor can find it ---
+# --- right now there's one kind of problem; this is where the other kinds will go ---
+# --- (headings are skipped on purpose: format_inline doesn't make links inside headings yet) ---
+
+def find_issues(boxes):
+
+    issues = []
+    for number, box in enumerate(boxes, start=1):   # people count from 1, not 0
+        if box["kind"] == "paragraph":
+            texts = [box["text"]]
+        elif box["kind"] == "list":
+            texts = box["items"]
+        else:
+            continue
+
+        for text in texts:
+            for link_text, url in find_links(text):
+                if link_text_is_weak(link_text, url):
+                    issues.append(f"Box {number}: link ({url}) is missing descriptive text.")
+    return issues
 
 # --- PHASE ONE AS ONE CALL: RAW MARKDOWN IN, LIST OF BOXES OUT -------------------------------------------------------
 # --- cleans the text, fixes bare urls, splits it into chunks, and puts each chunk in a labeled box ---
