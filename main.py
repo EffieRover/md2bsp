@@ -199,9 +199,11 @@ def finish_editing(number):
 
 @when("click", "#boxes")
 def box_clicked(event):
-    button = event.target.closest(".edit-toggle")            # in case the click lands near the icon not on it
-    if button is None:
-        return
+    button = event.target
+    if not button.classList.contains("edit-toggle"):         # the click may have landed on the icon inside the button
+        button = button.parentElement                        # so step up one level: an icon's parent is its button
+        if not button.classList.contains("edit-toggle"):     # still not an Edit / Done button; not our click
+            return
     number = int(button.getAttribute("data-box"))
     if document.getElementById(f"editor-{number}").hidden:
         start_editing(number)
