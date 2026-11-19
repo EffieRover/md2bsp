@@ -1,4 +1,4 @@
-from pyscript import document, when
+from pyscript import document, when, window
 from md2bsp_web import text_to_boxes, box_to_html, box_type_name, change_box_type, BOX_TYPE_CHOICES, find_issues, get_box_lines, edit_box_text
 
 document.getElementById("status").innerText = "Python is ready."
@@ -24,6 +24,7 @@ def show_organize_screen():
     document.getElementById("step-paste").removeAttribute("aria-current")           # move the white pill in the nav bar
     document.getElementById("step-organize").setAttribute("aria-current", "step")
     document.getElementById("boxes").focus()    # the button that had focus just vanished, so hand focus to the new screen
+    window.scrollTo(0,0)
 
 # --- and back to the "1: Paste" look ---
 def show_paste_screen():
