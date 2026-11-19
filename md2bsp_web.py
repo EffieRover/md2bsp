@@ -486,6 +486,57 @@ def change_box_type(box, type_name):
     new_box["lines"] = lines
     return new_box
 
+# --- ALL THE BOXES AS ONE LONG STRING OF HTML (NO TIME CARD YET) --------------------------------------------------------
+# --- the web page and the command line both start from here ---
+
+def boxes_to_content(boxes):
+
+    pieces = []
+    for box in boxes:
+        pieces.append(box_to_html(box))
+    return "\n".join(pieces)               # newlines cuz humans have to check it
+
+# --- THE PREVIEW: THE CONTENT WITH THE TIME CARD DROPPED IN RIGHT AFTER THE H1, SAME AS THE REAL PAGE ---
+# --- no template here; the template's styles only exist inside Brightspace, so this is a simulation ---
+
+def make_preview_html(boxes):
+
+    content = boxes_to_content(boxes)
+    page_leader = make_page_leader(calculate_time_on_task(boxes))
+    return content.replace("</h1>", "</h1>\n" + page_leader, 1)
+
+# --- THE REAL THING: THE WHOLE FINISHED PAGE, READY TO SAVE AS A FILE ---
+
+def make_finished_page(template, boxes):
+
+    content = boxes_to_content(boxes)
+    page_leader = make_page_leader(calculate_time_on_task(boxes))
+    return build_page(template, boxes, content, page_leader)
+
+# --- WHAT TO CALL THE DOWNLOADED FILE: THE PAGE TITLE, LOWERCASE, WITH HYPHENS ---
+# --- "The Beginner's Guide (Test)" becomes the-beginners-guide-test.html ---
+
+def make_file_name(boxes):
+
+    title = "page"                          # in case there's no H1
+    for box in boxes:
+        if box["kind"] == "heading" and box["level"] == 1:
+            title = box["text"]
+            break
+
+    name = ""
+    for character in title.lower():
+        if character == "'":                # apostrophes just disappear: beginners, not beginner-s
+            continue
+        if character.isalnum():
+            name += character
+        elif name != "" and not name.endswith("-"):
+            name += "-"                     # anything else becomes one hyphen, never two in a row
+    name = name.strip("-")
+    if name == "":
+        name = "page"
+    return name + ".html"
+    
 # --- WHAT THE EDITING TEXT BOX SHOULD SHOW FOR A BOX -------------------------------------------------------------------
 # --- one line per line of the box; list items get a "- " in front, numbered or not (the dropdown decides numbered, and the page counts) ---
 
