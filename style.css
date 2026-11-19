@@ -343,4 +343,14 @@ textarea::placeholder {
 .preview h3 { font-size: 1.75rem; font-weight: 500; line-height: 1.2; margin: 0 0 0.5rem; }
 .preview h4 { font-size: 1.5rem;  font-weight: 500; line-height: 1.2; margin: 0 0 0.5rem; }
 .preview h5 { font-size: 1.25rem; font-weight: 500; line-height: 1.2; margin: 0 0 0.5rem; }
+
+/* Boxes sit quietly in gray... */
+.box-frame {
+  border-color: var(--rule);
+}
+
+/* ...until you're working in one. Then it gets the dark outline. */
+.box-frame:focus-within {
+  border-color: var(--text);
+}
 .preview h6 { font-size: 1rem;    font-weight: 500; line-height: 1.2; margin: 0 0 0.5rem; }
