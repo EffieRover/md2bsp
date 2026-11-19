@@ -20,6 +20,7 @@ def show_organize_screen():
     set_hidden("back-button", False)
     set_hidden("help-paste", True)              # swap the instructions in the right-hand card
     set_hidden("help-organize", False)
+    set_hidden("issues", False)                 # the "Things to fix" section shows up
     document.getElementById("step-paste").removeAttribute("aria-current")           # move the white pill in the nav bar
     document.getElementById("step-organize").setAttribute("aria-current", "step")
     document.getElementById("boxes").focus()    # the button that had focus just vanished, so hand focus to the new screen
@@ -33,6 +34,7 @@ def show_paste_screen():
     set_hidden("back-button", True)
     set_hidden("help-paste", False)
     set_hidden("help-organize", True)
+    set_hidden("issues", True)
     document.getElementById("step-organize").removeAttribute("aria-current")
     document.getElementById("step-paste").setAttribute("aria-current", "step")
     document.getElementById("markdown-input").focus()
@@ -97,6 +99,7 @@ def chunk_it(event):
         return
 
     state["boxes"] = boxes                                   # remember them so the dropdowns can change them
+    problems = render_issues(boxes)                          # do we have any issues with link text?
 
     container = document.getElementById("boxes")
     container.innerHTML = ""                                 # wipe any old boxes first
@@ -104,7 +107,7 @@ def chunk_it(event):
     for number, box in enumerate(boxes, start=1):
         container.appendChild(make_box_frame(number, box))
 
-    document.getElementById("result").innerText = f"Found {len(boxes)} boxes."
+    document.getElementById("result").innerText = f"Found {len(boxes)} boxes. Things to fix: {problems}."
     show_organize_screen()
 
 # --- the instructor changed a dropdown: relabel that box and redraw its preview ---
@@ -114,6 +117,7 @@ def type_changed(event):
     number = int(picker.getAttribute("data-box"))            # which box it belongs to
     new_box = change_box_type(state["boxes"][number - 1], picker.value)
     state["boxes"][number - 1] = new_box                     # swap the old box for the relabeled one
+    render_issues(state["boxes"])                            # a type change can change what needs fixing
     document.getElementById(f"preview-{number}").innerHTML = box_to_html(new_box)
     document.getElementById("result").innerText = f"Box {number} is now: {TYPE_LABELS[picker.value]}."
 
