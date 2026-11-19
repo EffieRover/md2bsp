@@ -98,6 +98,12 @@ textarea {
   border-radius: 6px;
 }
 
+/* -- formatting for the box text during organize -- */
+.box-text {
+  margin: 0;
+  white-space: pre-wrap;   /* keeps line breaks, so list items stay on separate lines */
+}
+
 button {
   padding: 10px 24px;
   font: inherit;
