@@ -11,35 +11,45 @@
   <header class="top-bar">
     <span class="site-name">Loy's Markdown to Brightspace</span>
   </header>
-<nav class="nav-bar" aria-label="Steps">
-  <ol class="steps">
-    <li aria-current="step">1: Paste</li>
-    <li>2: Organize</li>
-  </ol>
-</nav>
+
+  <nav class="nav-bar" aria-label="Steps">
+    <ol class="steps">
+      <li id="step-paste" aria-current="step">1: Paste</li>
+      <li id="step-organize">2: Organize</li>
+    </ol>
+  </nav>
 
   <main>
     <h1>New Page</h1>
 
     <form>
       <div class="columns">
-      <div>
-        <section class="card">
-          <label for="markdown-input" class="visually-hidden">Markdown content</label>
-          <textarea id="markdown-input" placeholder="Paste your markdown here"></textarea>
+
+        <div>
+          <section id="paste-screen" class="card">
+            <label for="markdown-input" class="visually-hidden">Markdown content</label>
+            <textarea id="markdown-input" placeholder="Paste your markdown here"></textarea>
+          </section>
+
+          <div id="boxes" tabindex="-1" hidden></div>
+
           <p id="result" aria-live="polite"></p>
           <p id="status" class="status">Waiting for Python...</p>
-        </section>
+        </div>
 
-        <div id="boxes"></div>
-      </div>
-        
         <aside class="card">
           <h2>How this works</h2>
-          <ol>
+
+          <ol id="help-paste">
             <li>Paste your markdown into the box.</li>
             <li>Click <strong>Chunk it</strong>.</li>
-            <li>The tool splits your text into parts and shows what it found.</li>
+            <li>Your text is split into boxes, one for each heading, paragraph, or list.</li>
+          </ol>
+
+          <ol id="help-organize" hidden>
+            <li>Each box is one piece of your page.</li>
+            <li>The label on each box shows what the tool thinks it is.</li>
+            <li>Click <strong>Back</strong> to fix your pasted text.</li>
           </ol>
         </aside>
 
@@ -48,6 +58,7 @@
       <div class="action-bar">
         <button type="button" id="go-button" class="primary" disabled>Chunk it</button>
         <button type="reset" id="clear-button" class="secondary">Clear</button>
+        <button type="button" id="back-button" class="secondary" hidden>Back</button>
       </div>
     </form>
   </main>
