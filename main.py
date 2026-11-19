@@ -1,5 +1,5 @@
 from pyscript import document, when
-from md2bsp_web import text_to_boxes, box_to_html, box_type_name, change_box_type, BOX_TYPE_CHOICES
+from md2bsp_web import text_to_boxes, box_to_html, box_type_name, change_box_type, BOX_TYPE_CHOICES, find_issues
 
 document.getElementById("status").innerText = "Python is ready."
 document.getElementById("go-button").disabled = False   # Python is ready, so turn the button on
@@ -73,6 +73,20 @@ def make_box_frame(number, box):
     frame.appendChild(preview)
     return frame
 
+def render_issues(boxes):
+    issues = find_issues(boxes)
+    issue_list = document.getElementById("issues-list")
+    issue_list.innerHTML = ""                   # empty out the old list first
+    if not issues:
+        item = document.createElement("li")
+        item.innerText = "Nothing to fix."
+        issue_list.appendChild(item)
+    for sentence in issues:
+        item = document.createElement("li")
+        item.innerText = sentence               # innerText, because the url came from pasted text
+        issue_list.appendChild(item)
+    return len(issues)
+    
 @when("click", "#go-button")
 def chunk_it(event):
     text = document.getElementById("markdown-input").value   # whatever was pasted
