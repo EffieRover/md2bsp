@@ -431,26 +431,27 @@ def box_type_name(box):
 # --- THE INSTRUCTOR PICKED A NEW TYPE: RETURN A NEW BOX WITH THE SAME WORDS, RELABELED ------------------------------
 # --- lists keep one item per line; headings and paragraphs get all the words in one piece ---
 
+def get_box_lines(box):
+    # a box remembers its original lines, so changing types never loses them
+    if "lines" in box:
+        return box["lines"]
+    if box["kind"] == "list":
+        return box["items"]
+    return box["text"].splitlines()
+
 def change_box_type(box, type_name):
-
-    if box["kind"] == "list":               # lines = the words in the box, one string per line
-        lines = box["items"]
-    else:
-        lines = box["text"].splitlines()
-
-    one_piece = " ".join(line.strip() for line in lines)    # all the words glued together, for headings and paragraphs
-
+    lines = get_box_lines(box)
+    one_piece = " ".join(line.strip() for line in lines)
     if type_name == "paragraph":
-        return make_paragraph(one_piece)
-
-    if type_name == "ul" or type_name == "ol":
-        return {"kind": "list", "ordered": type_name == "ol", "items": lines}
-                                            # ordered is True only when they picked the numbered list
-
-    if type_name.startswith("h"):           # h1 through h6; the second character is the level
-        return {"kind": "heading", "level": int(type_name[1]), "text": one_piece}
-
-    return box                              # we don't know that type, so leave the box alone
+        new_box = make_paragraph(one_piece)
+    elif type_name == "ul" or type_name == "ol":
+        new_box = {"kind": "list", "ordered": type_name == "ol", "items": lines}
+    elif type_name.startswith("h"):
+        new_box = {"kind": "heading", "level": int(type_name[1]), "text": one_piece}
+    else:
+        return box
+    new_box["lines"] = lines
+    return new_box
 
 # --- PHASE ONE AS ONE CALL: RAW MARKDOWN IN, LIST OF BOXES OUT -------------------------------------------------------
 # --- cleans the text, fixes bare urls, splits it into chunks, and puts each chunk in a labeled box ---
