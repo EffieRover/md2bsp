@@ -358,3 +358,11 @@ textarea::placeholder {
 #issues { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--rule); }
 #issues-list { padding-left: 20px; overflow-wrap: anywhere; }   /* long urls wrap instead of poking out of the card */
 .preview h6 { font-size: 1rem;    font-weight: 500; line-height: 1.2; margin: 0 0 0.5rem; }
+
+.edit-toggle { padding: 4px 12px; font-size: 0.9rem; margin-left: 8px; }   /* small, so it sits nicely beside the dropdown */
+.box-editor {
+  display: block; box-sizing: border-box;
+  width: calc(100% - 48px); margin: 16px 24px;
+  height: auto; min-height: 6em;                 /* the global textarea rule says 360px; this box should fit its words */
+  font-family: inherit; font-size: 19px; line-height: 1.55; resize: vertical;
+}
