@@ -1,44 +1,54 @@
 from pyscript import document, when, window
-from md2bsp_web import text_to_boxes, box_to_html, box_type_name, change_box_type, BOX_TYPE_CHOICES, find_issues, box_to_editor_text, edit_box_text
+from md2bsp_web import text_to_boxes, box_to_html, box_type_name, change_box_type, BOX_TYPE_CHOICES, find_issues, box_to_editor_text, edit_box_text, make_preview_html, make_finished_page, make_file_name, read_file, TEMPLATE_FILE
 
 document.getElementById("status").innerText = "Python is ready."
 document.getElementById("go-button").disabled = False   # Python is ready, so turn the button on
 
-state = {"boxes": []}                           # the boxes we're working on; the dropdowns change these
+state = {"boxes": [], "screen": "paste"}        # the boxes we're working on; the dropdowns change these
 TYPE_LABELS = dict(BOX_TYPE_CHOICES)            # "h2" -> "Heading 2", so we can say it out loud
 
 # --- shortcut: hide or show one thing on the page, found by its id ---
 def set_hidden(element_id, is_hidden):
     document.getElementById(element_id).hidden = is_hidden
 
-# --- switch the page to the "2: Organize" look ---
-def show_organize_screen():
-    set_hidden("paste-screen", True)            # the paste box goes away
-    set_hidden("boxes", False)                  # the boxes appear
-    set_hidden("go-button", True)               # Chunk it and Clear only make sense on the paste screen
-    set_hidden("clear-button", True)
-    set_hidden("back-button", False)
-    set_hidden("help-paste", True)              # swap the instructions in the right-hand card
-    set_hidden("help-organize", False)
-    set_hidden("issues", False)                 # the "Things to fix" section shows up
-    document.getElementById("step-paste").removeAttribute("aria-current")           # move the white pill in the nav bar
-    document.getElementById("step-organize").setAttribute("aria-current", "step")
-    document.getElementById("boxes").focus()    # the button that had focus just vanished, so hand focus to the new screen
-    window.scrollTo(0,0)
+# --- THE THREE SCREENS: WHAT EACH ONE SHOWS, WHICH STEP LIGHTS UP, WHERE FOCUS GOES, AND WHAT THE BACK BUTTON SAYS ---
+# --- every piece of the page that comes and goes is listed once in ALL_PARTS; a screen only lists what it shows ---
 
-# --- and back to the "1: Paste" look ---
-def show_paste_screen():
-    set_hidden("paste-screen", False)
-    set_hidden("boxes", True)
-    set_hidden("go-button", False)
-    set_hidden("clear-button", False)
-    set_hidden("back-button", True)
-    set_hidden("help-paste", False)
-    set_hidden("help-organize", True)
-    set_hidden("issues", True)
-    document.getElementById("step-organize").removeAttribute("aria-current")
-    document.getElementById("step-paste").setAttribute("aria-current", "step")
-    document.getElementById("markdown-input").focus()
+ALL_PARTS = [
+    "paste-screen", "boxes", "page-preview",
+    "go-button", "clear-button", "preview-button", "download-button", "back-button",
+    "help-paste", "help-organize", "help-preview", "issues",
+]
+STEP_IDS = ["step-paste", "step-organize", "step-preview"]
+
+SCREENS = {
+    "paste": {
+        "show": ["paste-screen", "go-button", "clear-button", "help-paste"],
+        "step": "step-paste", "focus": "markdown-input", "back": "",
+    },
+    "organize": {
+        "show": ["boxes", "preview-button", "back-button", "help-organize", "issues"],
+        "step": "step-organize", "focus": "boxes", "back": "Back to 1: Paste",
+    },
+    "preview": {
+        "show": ["page-preview", "download-button", "back-button", "help-preview", "issues"],
+        "step": "step-preview", "focus": "page-preview", "back": "Back to 2: Organize",
+    },
+}
+
+# --- switch the page to one of the screens above ---
+def show_screen(name):
+    screen = SCREENS[name]
+    for element_id in ALL_PARTS:                # hide everything, then show only what this screen wants
+        set_hidden(element_id, element_id not in screen["show"])
+    for step_id in STEP_IDS:                    # move the white pill in the nav bar
+        document.getElementById(step_id).removeAttribute("aria-current")
+    document.getElementById(screen["step"]).setAttribute("aria-current", "step")
+    if screen["back"] != "":
+        document.getElementById("back-button").innerText = screen["back"]
+    state["screen"] = name                      # so the Back button knows where it is
+    document.getElementById(screen["focus"]).focus()    # the button that had focus just vanished, so hand focus to the new screen
+    window.scrollTo(0, 0)                       # focusing a tall element scrolls the page; put it back at the top
 
 # --- build one framed box: a toolbar on top (number + type dropdown), the preview underneath ---
 def make_box_frame(number, box):
@@ -134,7 +144,7 @@ def chunk_it(event):
         container.appendChild(make_box_frame(number, box))
 
     document.getElementById("result").innerText = f"Found {len(boxes)} boxes. Things to fix: {problems}."
-    show_organize_screen()
+    show_screen("organize")
 
 # --- the instructor changed a dropdown: relabel that box and redraw its preview ---
 @when("change", "#boxes")
@@ -210,7 +220,42 @@ def box_clicked(event):
     else:
         finish_editing(number)
 
+# --- make sure nobody's half-finished edit gets left behind when the page moves on ---
+def finish_all_editing():
+    for number in range(1, len(state["boxes"]) + 1):
+        if not document.getElementById(f"editor-{number}").hidden:
+            finish_editing(number)
+
+@when("click", "#preview-button")
+def show_preview(event):
+    finish_all_editing()                        # an open edit box counts as a finished one
+    document.getElementById("page-preview").innerHTML = make_preview_html(state["boxes"])
+    problems = find_issues(state["boxes"])
+    document.getElementById("result").innerText = f"Preview ready. Things to fix: {len(problems)}."
+    show_screen("preview")
+
+@when("click", "#download-button")
+def download_page(event):
+    try:
+        template = read_file(TEMPLATE_FILE)     # read_file stops the program if the file is missing; catch that one thing
+    except SystemExit:
+        document.getElementById("result").innerText = "Can't find the page template, so nothing was downloaded."
+        return
+    page = make_finished_page(template, state["boxes"])
+    file_name = make_file_name(state["boxes"])
+
+    link = document.createElement("a")          # a throwaway link that does the downloading, then disappears
+    link.href = "data:text/html;charset=utf-8," + window.encodeURIComponent(page)
+    link.download = file_name
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    document.getElementById("result").innerText = f"Downloaded {file_name}."
+
 @when("click", "#back-button")
 def go_back(event):
     document.getElementById("result").innerText = ""
-    show_paste_screen()
+    if state["screen"] == "preview":
+        show_screen("organize")
+    else:
+        show_screen("paste")
