@@ -184,8 +184,8 @@ def finish_editing(number):
 
 @when("click", "#boxes")
 def box_clicked(event):
-    button = event.target
-    if not button.classList.contains("edit-toggle"):         # only the Edit / Done buttons are ours
+    button = event.target.closest(".edit-toggle")            # in case the click lands near the icon not on it
+    if button is None:
         return
     number = int(button.getAttribute("data-box"))
     if document.getElementById(f"editor-{number}").hidden:
