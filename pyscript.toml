@@ -1,3 +1,3 @@
 [files]
 "./md2bsp_web.py" = "./md2bsp_web.py"
-"./template.html" - "./template.html"
+"./template_gcc.html" - "./template_gcc.html"
