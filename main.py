@@ -35,22 +35,22 @@ def chunk_it(event):
     container.innerHTML = ""                                 # wipe any old boxes first
 
     for number, box in enumerate(boxes, start=1):            # these lines start creating text boxes for the organize step
-    label, shown_text = describe_box(box)
+        label, shown_text = describe_box(box)
 
-    card = document.createElement("section")                 # one card per box
-    card.className = "card"
+        card = document.createElement("section")                 # one card per box
+        card.className = "card"
 
-    title = document.createElement("h2")                     # boxes are labeled with an h2
-    title.innerText = f"Box {number}: {label}"
+        title = document.createElement("h2")                     # boxes are labeled with an h2
+        title.innerText = f"Box {number}: {label}"
 
-    body = document.createElement("p")                       # let's actually make them
-    body.className = "box-text"
-    body.innerText = shown_text
+        body = document.createElement("p")                       # let's actually make them
+        body.className = "box-text"
+        body.innerText = shown_text
 
-    card.appendChild(title)
-    card.appendChild(body)
-    container.appendChild(card)
-
+        card.appendChild(title)
+        card.appendChild(body)
+        container.appendChild(card)
+        
     document.getElementById("result").innerText = f"Found {len(boxes)} boxes."
 
 @when("click", "#clear-button")
