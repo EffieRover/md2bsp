@@ -1,5 +1,5 @@
 from pyscript import document, when
-from md2bsp_web import text_to_boxes, box_to_html, box_type_name, change_box_type, BOX_TYPE_CHOICES, find_issues
+from md2bsp_web import text_to_boxes, box_to_html, box_type_name, change_box_type, BOX_TYPE_CHOICES, find_issues, get_box_lines, edit_box_text
 
 document.getElementById("status").innerText = "Python is ready."
 document.getElementById("go-button").disabled = False   # Python is ready, so turn the button on
@@ -63,6 +63,21 @@ def make_box_frame(number, box):
         option.innerText = label
         picker.appendChild(option)
     picker.value = box_type_name(box)           # start on whatever the engine decided this box is
+    picker.id = f"type-{number}"                # ids so the edit code can find this box's pieces again
+
+    edit_button = document.createElement("button")   # one button that flips between Edit and Done
+    edit_button.type = "button"                 # a plain button, not one that submits the form
+    edit_button.id = f"edit-{number}"
+    edit_button.className = "secondary edit-toggle"
+    edit_button.setAttribute("data-box", str(number))
+    edit_button.setAttribute("aria-label", f"Edit text of box {number}")
+    edit_button.innerText = "Edit"
+
+    editor = document.createElement("textarea") # hidden until Edit is clicked; holds the box's raw words
+    editor.id = f"editor-{number}"
+    editor.className = "box-editor"
+    editor.setAttribute("aria-label", f"Text of box {number}")
+    editor.hidden = True
 
     preview = document.createElement("div")     # the box's words, shown the way they'll look on the page
     preview.className = "preview"
@@ -71,8 +86,10 @@ def make_box_frame(number, box):
 
     toolbar.appendChild(badge)
     toolbar.appendChild(picker)
+    toolbar.appendChild(edit_button)
     frame.appendChild(toolbar)
     frame.appendChild(preview)
+    frame.appendChild(editor)
     return frame
 
 def render_issues(boxes):
@@ -114,12 +131,63 @@ def chunk_it(event):
 @when("change", "#boxes")
 def type_changed(event):
     picker = event.target                                    # the dropdown that was just changed
+    if picker.tagName != "SELECT":                           # the editing box fires "change" too; that's not ours
+        return
     number = int(picker.getAttribute("data-box"))            # which box it belongs to
     new_box = change_box_type(state["boxes"][number - 1], picker.value)
     state["boxes"][number - 1] = new_box                     # swap the old box for the relabeled one
     render_issues(state["boxes"])                            # a type change can change what needs fixing
     document.getElementById(f"preview-{number}").innerHTML = box_to_html(new_box)
     document.getElementById("result").innerText = f"Box {number} is now: {TYPE_LABELS[picker.value]}."
+
+# --- flip one box between "looking at the preview" and "typing in the text box" ---
+def set_editing_look(number, is_editing):
+    document.getElementById(f"editor-{number}").hidden = not is_editing
+    document.getElementById(f"preview-{number}").hidden = is_editing
+    document.getElementById(f"type-{number}").disabled = is_editing     # no relabeling while typing
+    button = document.getElementById(f"edit-{number}")
+    if is_editing:
+        button.innerText = "Done"
+        button.setAttribute("aria-label", f"Done editing box {number}")
+    else:
+        button.innerText = "Edit"
+        button.setAttribute("aria-label", f"Edit text of box {number}")
+
+# --- Edit was clicked: show the box's words in a text box and put the cursor there ---
+def start_editing(number):
+    lines = get_box_lines(state["boxes"][number - 1])
+    editor = document.getElementById(f"editor-{number}")
+    editor.value = "\n".join(lines)
+    set_editing_look(number, True)
+    editor.style.height = "auto"                             # then grow to fit the words
+    editor.style.height = str(editor.scrollHeight + 4) + "px"
+    editor.focus()
+
+# --- Done was clicked: rebuild the box from what was typed and go back to the preview ---
+def finish_editing(number):
+    old_box = state["boxes"][number - 1]
+    new_box = edit_box_text(old_box, document.getElementById(f"editor-{number}").value)
+    state["boxes"][number - 1] = new_box
+    document.getElementById(f"preview-{number}").innerHTML = box_to_html(new_box)
+    set_editing_look(number, False)
+    problems = render_issues(state["boxes"])                 # the fix might have cleared (or caused) a problem
+    if new_box is old_box:
+        message = f"Box {number} can't be empty, so it was left as it was."
+    else:
+        message = f"Box {number} updated."
+    document.getElementById("result").innerText = f"{message} Things to fix: {problems}."
+    document.getElementById(f"edit-{number}").focus()        # keep the keyboard where it was
+
+@when("click", "#boxes")
+def box_clicked(event):
+    button = event.target
+    if not button.classList.contains("edit-toggle"):         # only the Edit / Done buttons are ours
+        return
+    number = int(button.getAttribute("data-box"))
+    if document.getElementById(f"editor-{number}").hidden:
+        start_editing(number)
+    else:
+        finish_editing(number)
 
 @when("click", "#back-button")
 def go_back(event):
