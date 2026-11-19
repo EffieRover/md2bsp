@@ -301,11 +301,11 @@ def format_inline(text):
             rest = rest[url_seam_position + 2:]   # and keep looking through the rest of the pile
             continue
 
-        visible_link_text = domain_label(url)
+        visible_link_text = rest[open_bracket_position + 1:url_seam_position].strip()
         url = rest[url_seam_position + 2:close_paren_position].replace('"', "%22")
 
         if visible_link_text == "":
-            visible_link_text = "missing text"
+            visible_link_text = domain_label(url)
 
         finished_text += rest[:open_bracket_position]
         finished_text += (
