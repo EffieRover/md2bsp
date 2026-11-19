@@ -176,9 +176,18 @@ button {
   box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
 }
 
+/* -- I don't remember what this is for but it's not for data entry boxes -- */
 :focus-visible {
   outline: 3px solid var(--text);
   outline-offset: 2px;
+}
+
+/* -- Text (data entry) boxes: the focus ring IS the border, like Brightspace (blue, 2px) -- */
+textarea:focus-visible,
+input:focus-visible {
+  outline: none;
+  border-color: var(--blue-button);
+  box-shadow: 0 0 0 1px var(--blue-button);   /* adds a second pixel so the border reads as 2px without shifting the layout */
 }
 
 .status {
