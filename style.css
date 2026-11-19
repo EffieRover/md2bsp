@@ -265,7 +265,29 @@ textarea::placeholder {
 
 .preview {
   padding: 16px 24px;
+  font-size: 19px;
+  line-height: 1.55;
+  color: #494c4e;
 }
+
+.preview h1,
+.preview h2,
+.preview h3,
+.preview h4,
+.preview h5,
+.preview h6 {
+  color: #0D4471;
+  font-weight: 400;          /* regular weight, not bold */
+  line-height: 1.2;
+  margin: 0 0 0.5em;
+}
+
+.preview h1 { font-size: 40px; }
+.preview h2 { font-size: 30px; }
+.preview h3 { font-size: 26px; }
+.preview h4 { font-size: 22px; }   /* guess, no number yet */
+.preview h5 { font-size: 20px; }   /* guess, no number yet */
+.preview h6 { font-size: 19px; }   /* guess, no number yet */
 
 .preview > :first-child { margin-top: 0; }
 .preview > :last-child { margin-bottom: 0; }
