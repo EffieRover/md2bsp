@@ -486,17 +486,58 @@ def change_box_type(box, type_name):
     new_box["lines"] = lines
     return new_box
 
+# --- WHAT THE EDITING TEXT BOX SHOULD SHOW FOR A BOX -------------------------------------------------------------------
+# --- one line per line of the box; list items get a "- " in front, numbered or not (the dropdown decides numbered, and the page counts) ---
+
+def box_to_editor_text(box):
+
+    lines = get_box_lines(box)
+    if box_type_name(box) == "ul" or box_type_name(box) == "ol":
+        lines = ["- " + line for line in lines]
+    return "\n".join(lines)
+
+# --- DOES THIS LINE START A NEW LIST ITEM? RETURN (YES/NO, THE LINE WITHOUT ITS MARKER) -------------------------------
+# --- we're generous about what we accept ("- ", "* ", "1. ") and strict about what we hand back ---
+
+def strip_list_marker(line):
+
+    if line.startswith("- ") or line.startswith("* "):
+        return True, line[2:].strip()
+    number, dot, rest = line.partition(". ")
+    if dot and number.isdigit():            # somebody typed 1. out of habit; fine, the page numbers things itself
+        return True, rest.strip()
+    return False, line
+
+# --- A LIST'S LINES COME BACK AS ITEMS: A MARKER STARTS A NEW ITEM, A LINE WITHOUT ONE GLUES ONTO THE ONE ABOVE --------
+# --- same rule the pasted text follows in chunk_to_list ---
+
+def lines_to_items(lines):
+
+    items = []
+    for line in lines:
+        if line == "-" or line == "*":      # a marker with nothing after it is an empty item; skip it
+            continue
+        is_new_item, text = strip_list_marker(line)
+        if is_new_item or not items:
+            items.append(text)
+        else:
+            items[-1] = items[-1] + " " + text
+    return items
+
 # --- THE INSTRUCTOR EDITED A BOX'S WORDS: RETURN A NEW BOX OF THE SAME TYPE WITH THE NEW WORDS --------------------------
-# --- same cleanup the pasted text got, then blank lines vanish; one line per list item, one box stays one box ---
+# --- same cleanup the pasted text got, then blank lines vanish; one box stays one box ---
 # --- if they erased everything, hand back the box we were given (an empty box would break things) ---
 
 def edit_box_text(box, new_text):
 
     new_text = structure_bare_urls(clean_text(new_text))    # curly quotes and bare urls get the same treatment as pasted text
     lines = [line.strip() for line in new_text.splitlines() if line.strip() != ""]
+    type_name = box_type_name(box)
+    if type_name == "ul" or type_name == "ol":
+        lines = lines_to_items(lines)       # markers only mean something inside a list
     if not lines:
         return box
-    return change_box_type({"lines": lines}, box_type_name(box))
+    return change_box_type({"lines": lines}, type_name)
 
 # --- FIND EVERY [TEXT](URL) IN A PIECE OF TEXT: RETURN A LIST OF (TEXT, URL) PAIRS ----------------------------------
 # --- same hunt as format_inline, but on raw text, and it only reports; it doesn't change anything ---
