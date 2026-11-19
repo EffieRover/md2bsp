@@ -353,4 +353,8 @@ textarea::placeholder {
 .box-frame:focus-within {
   border-color: var(--text);
 }
+
+/* problems in the right hand card */
+#issues { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--rule); }
+#issues-list { padding-left: 20px; overflow-wrap: anywhere; }   /* long urls wrap instead of poking out of the card */
 .preview h6 { font-size: 1rem;    font-weight: 500; line-height: 1.2; margin: 0 0 0.5rem; }
