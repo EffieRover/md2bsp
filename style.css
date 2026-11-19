@@ -20,6 +20,13 @@
   font-display: swap;
   src: url('./fonts/Lato-Bold.woff2') format('woff2');
 }
+@font-face {
+  font-family: 'Lato';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/Lato-BoldItalic.woff2') format('woff2');
+}
 
 :root {
   --page: #f6f7f8;
