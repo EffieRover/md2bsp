@@ -14,7 +14,7 @@ WHAT IT DOES:
     Phase 3: drop the HTML into the template file and save it
 
 HOW TO RUN IT:
-    1. Keep template.html in the same folder as this file.
+    1. Keep template_gcc.html in the same folder as this file.
     2. Keep input.md in the same folder as this file.
     3. Run: python md2bsp_web.py 
     4. Open output.html and look inside it. 
@@ -47,7 +47,7 @@ from urllib.parse import urlparse           # chops a web address into its parts
 # --- SETTINGS --------------------------------------------------------------------------------------------------------
 
 TESTING = True                              # print ALL the things!!!! (or false to not)
-TEMPLATE_FILE = "template.html"             # the Brightspace page wrapper
+TEMPLATE_FILE = "template_gcc.html"         # the Brightspace page wrapper
 INPUT_FILE = "input.md"                     # the fixed input file, for now
 OUTPUT_FILE = "output.html"                 # the fixed output file, for now
 WORDS_PER_MINUTE = 200                      # average reading speed, used for time on task calculation
