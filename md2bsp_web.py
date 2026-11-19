@@ -1,0 +1,472 @@
+"""
+md2bsp_web.py -- Builds a finished Brightspace web page, given content pieces
+
+WHAT IT DOES:
+    Reads a file of markdown text, and converts that markdown into the appropriate HTML sequences to be included in Brightspace. 
+    Then it wraps those sequences in the standard GCC template and Bob's your uncle. Note: it works on a multi-step process 
+    because I want the instructor to be able to check some things and clean some things up before it goes out.
+    Words I use: a CHUNK is a piece of the raw text (a heading, a paragraph, a list).
+                 a BOX is a chunk after the program has decided what it is and labeled it.
+    Phase 1: pull apart the input file into chunks and put each chunk in a labeled box
+        Planned Phase 1.1: suggest labels and allow instructor to adjust / mash up boxes
+        Planned Phase 1.2: remind instructor to include header items such as reading length and needed materials
+    Phase 2: convert those boxes into HTML
+    Phase 3: drop the HTML into the template file and save it
+
+HOW TO RUN IT:
+    1. Keep template.html in the same folder as this file.
+    2. Keep input.md in the same folder as this file.
+    3. Run: python md2bsp_web.py 
+    4. Open output.html and look inside it. 
+
+KNOWN ISSUES:
+    1. It currently only reads and outputs a fixed file name
+    2. Numbered lists must start with 1. and a space
+    3. Bulleted lists must start with either * or - and a space
+    4. Does not manage nested lists
+    5. ***both*** writes crossed tags that Brightspace quietly corrects
+
+TODO:
+    1. Recognize and format videos in an accessible (WCAG) manner
+    2. Web version (GitHub Pages + PyScript): paste, chunk, show the boxes, let the instructor relabel them
+    3. Accept uploaded markdown files; deliver the finished page as a download
+    4. Start the suggestion engine ... callouts, accordions, tabs, blockquotes
+    5. Deliver modification engine ... allow instructor to set callouts, accordions, tabs, etc
+    6. Ask for before you begin, materials needed, CLO, Unit/Week/Module
+    7. Insert items at top or bottom of page as appropriate.
+
+"""
+# --- IMPORTS ---------------------------------------------------------------------------------------------------------
+
+import os                                   # allows us to ask for device folders, for now
+import sys                                  # allows us to stop the program with a message
+from html import escape                     # make text safe to put inside HTML / sanitize it
+import math                                 # cuz we be calculatin' reading time
+
+# --- SETTINGS --------------------------------------------------------------------------------------------------------
+
+TESTING = True                              # print ALL the things!!!! (or false to not)
+TEMPLATE_FILE = "template.html"             # the Brightspace page wrapper
+INPUT_FILE = "input.md"                     # the fixed input file, for now
+OUTPUT_FILE = "output.html"                 # the fixed output file, for now
+WORDS_PER_MINUTE = 200                      # average reading speed, used for time on task calculation
+
+DEFAULT_PAGE_BANNER = "/shared/Course File Templates/GNC/pages/../_assets/img/banner_03.jpg"
+                                            # ye olde ubiquitous notebook and teapot file
+
+JUNK_TO_PLAIN = {                           # get rid of Microsoft "smart" bullshit
+    "\u201c": '"',                          # curly open double quote
+    "\u201d": '"',                          # curly close double quote
+    "\u2018": "'",                          # curly open single quote
+    "\u2019": "'",                          # curly close single quote, which is also the curly apostrophe
+    "\u2026": "...",                        # the one-character ellipsis
+    "\u2013": "-",                          # en dash, as in 10–15
+    "\u2014": " - ",                        # em dash; spaces added so the words on either side don't mash together
+    "\u00a0": " ",                          # non-breaking space, a classic Word landmine
+    "\u200b": "",                           # zero-width space, invisible and useless
+    "\ufeff": "",                           # byte order mark, sometimes shows up at the start of a file
+}
+
+# --- READING THE INPUT FILE ------------------------------------------------------------------------------------------
+# --- Read a text file, file_name, and return everything in it as one piece of text ---
+# --- with open ... opens the file and closes it when we're done; utf-8 tells py how to read special characters ---
+
+def read_file(file_name):
+    try:
+        with open(file_name, encoding="utf-8") as file:
+            return file.read()
+
+    # --- if the file isn't where we expect it or isn't called what we expect ---
+    except FileNotFoundError:
+        sys.exit(
+            f"Can't find '{file_name}' in {os.getcwd()}.\n"
+            "Move the file there, or check spelling."
+        )
+    # --- if the file is there but in some bizarre format ---
+    except UnicodeDecodeError:
+        sys.exit(
+            f"Can't read '{file_name}' because it isn't UTF-8.\n"
+            "Re-save your file as standard UTF-8 encoding or plain text."
+        )
+
+# --- CLEANING UP WORD AND WEB JUNK -----------------------------------------------------------------------------------
+# --- go through the file while it's still text and remove Microsoft bullshit ---
+# --- replace with nice clean characters ---
+
+def clean_text(text):
+
+    for junk, plain in JUNK_TO_PLAIN.items():   # go through the list, swapping each one
+        text = text.replace(junk, plain)
+
+    while "  " in text:                         # the em dash swap can leave double spaces; squash them
+        text = text.replace("  ", " ")
+
+    return text
+
+
+# --- TURN BARE URLS INTO PROPER MARKDOWN LINKS -----------------------------------------------------------------------
+# --- finds web addresses sitting loose in the text and wraps them as [missing text](url) so every link looks the same ---
+# --- "missing text" is a flag: a human has to replace it with real words before this ships ---
+# --- the format [text goes here](url goes here) is standard markdown that allows ADA compliant links ---
+
+def structure_bare_urls(text):
+
+    fixed_lines = []                            # initialize, initialize, initialize
+    text = text.replace("] (", "](")            # clean up extra spaces
+    text = text.replace("( http", "(http")      # clean up moar extra spaces
+    text = text.replace(" )", ")")              # clean up the other white spaces
+
+    for line in text.splitlines():              # for each line in the file
+        words = line.split(" ")                 # chop the line into words
+
+        for i, word in enumerate(words):        # for each word in the line
+            if word.startswith("http://") or word.startswith("https://"):
+                trailing = ""                   # initialize punctuation leftovers
+                while word and word[-1] in ".,;:!?)\"'":
+                    trailing = word[-1] + trailing # if the next character after the url is punctuation, save it in trailing
+                    word = word[:-1]            # and peel that punctuation off the original url
+
+                words[i] = f"[missing text]({word})" + trailing   # wrap the bare url, then put the punctuation back on the end
+
+        fixed_lines.append(" ".join(words))     # glue the words back into a line
+
+    return "\n".join(fixed_lines)               # glue the lines back into a file
+
+# --- SPLITTING THE MARKDOWN INTO CHUNKS ------------------------------------------------------------------------------
+# --- A "chunk" is a run of lines with no blank line inside it: a heading, a paragraph, or a whole list; this ---
+# --- function takes a long string of text (the whole file? *Yup*) and splits it into a list of chunk elements ---
+
+def split_into_chunks(markdown_text):
+    finished_chunks = []                    # finished stack of taped-together content chunks
+    current_chunk = []                      # pile of stuff on the table right now
+
+    for line in markdown_text.splitlines():
+        if line.strip() != "":              # if the current line of the file has actual content in it, pile it on the table
+            current_chunk.append(line)
+        else:                               # ha! we hit an empty line. make the current pile into a finished chunk and reset
+            if current_chunk:
+                finished_chunks.append("\n".join(current_chunk))
+                current_chunk = []
+    if current_chunk:
+        finished_chunks.append("\n".join(current_chunk))
+    return finished_chunks
+
+# --- MAKING THIS A FUNCTION BECAUSE IT'S THE DEFAULT ALL OVER THE PLACE ----------------------------------------------
+# --- In each check, if it's not X, then it's a paragraph; make it a one-line function so we don't have to retype ---
+
+def make_paragraph(text):
+    return {"kind": "paragraph", "text": text}
+
+# --- IS IT A HEADER? RETURN IT AS SUCH -------------------------------------------------------------------------------
+# --- If a chunk starts with a hashtag, it's probably an H1 through H6. Or should be. ---
+
+def chunk_to_header(chunk):
+
+    without_hashes = chunk.lstrip("#")      # Take the hashtags off the front, and see how much shorter it got.
+    level = len(chunk) - len(without_hashes)
+
+    # It's a real heading only if a space follows the hashtags, and there are 6 hashtags or fewer.
+    if without_hashes.startswith(" ") and level <= 6:
+        return {"kind": "heading", "level": level, "text": without_hashes.strip()}
+
+    # Otherwise, it only started with a hashtag (like "#BTS is trending"), so treat it as a paragraph.
+    return make_paragraph(chunk)
+
+# --- IS IT A LIST? RETURN IT AS SUCH ---------------------------------------------------------------------------------
+# --- bullet lists have lines starting with "- " or "* " numbered lists start with digit, dot, space ---
+
+def chunk_to_list(chunk):
+
+    if chunk.startswith("- ") or chunk.startswith("* "): # are we parsing bullets or numbers?
+        ordered = False
+    else:                               
+        ordered = True
+    items = []                          # initialize this puppy
+
+    for line in chunk.splitlines():
+
+        if ordered:                     # need to split at the '. ' to number and then rest of line
+
+            number, dot, actualcontent = line.partition(". ")
+            if number.isdigit():
+                items.append(actualcontent)
+            else:
+                items[-1] = items[-1] + " " + line.strip()   # plain character equals a continuation of the previous line: glue it on
+
+        else:                           # this is a bullet list, just split it
+
+            if line.startswith("- ") or line.startswith("* "):
+                items.append(line[2:])  # skip the first two characters - the bullet marker and space
+            else:
+                items[-1] = items[-1] + " " + line.strip()   # plain character equals a continuation of the previous line: glue it on
+
+    return {"kind": "list", "ordered": ordered, "items": items}
+
+# --- WRAP TEXT BETWEEN PAIRS OF MARKERS ------------------------------------------------------------------------------
+# --- finds text sitting between two markers (like ** or *) and wraps it in an HTML tag; used for bold and italic ---
+
+def wrap_pairs(text, marker, tag):
+
+    parts = text.split(marker)              # chop at every marker; the odd-numbered pieces (1, 3, 5...) sat between a pair
+
+    if len(parts) % 2 == 0:                 # an even number of pieces means one marker has no partner; leave it all alone
+        return text
+
+    finished_text = parts[0]                # initialize the output with the starting text
+    for i in range(1, len(parts), 2):       # visit the in-between pieces: 1, 3, 5...
+        inside = parts[i]                   # the piece that sat between two markers
+        outside = parts[i + 1]              # the piece that comes after it
+        if inside == "" or inside.startswith(" ") or inside.endswith(" "):
+            finished_text += marker + inside + marker + outside   # doesn't look like real emphasis (like 5 * 3 * 2); put the original back
+        else:
+            finished_text += f"<{tag}>{inside}</{tag}>" + outside
+
+    return finished_text
+
+# --- TURN [TEXT](URL) INTO A REAL LINK -------------------------------------------------------------------------------
+# --- takes a piece of text that has already been escaped and swaps each markdown link for an HTML link ---
+# --- every link opens in a new tab, with an icon for sighted users and hidden words for screen readers ---
+# --- remember link formats are all [text here](urlhere) at this point ---
+# --- also adds bold and italic tags ---
+
+def format_inline(text):
+
+    finished_text = ""
+
+    text = escape(text, quote=False)    # slipping those weird characters in there, were ya?
+
+    text = wrap_pairs(text, "**", "strong") # that's a <strong></strong> pair
+    text = wrap_pairs(text, "*", "em")  # that's an <em></em> pair
+
+    rest = text                         # need a place to hold the pieces while we split URL segments
+
+    while True:
+        url_seam_position = rest.find("](http") # lookee, we found a link! Maybe?
+        if url_seam_position == -1:     # no, no findee
+            break
+
+        open_bracket_position = rest.rfind("[", 0, url_seam_position) # from the URL pattern, look backwards to the beginning of the text
+        close_paren_position = rest.find(")", url_seam_position) # from the URL pattern, look forwards to the end of the URL
+
+        if open_bracket_position == -1 or close_paren_position == -1:
+            finished_text += rest[:url_seam_position + 2] # this is not a link at all, copy it as-is onto the finished pile
+            rest = rest[url_seam_position + 2:]   # and keep looking through the rest of the pile
+            continue
+
+        visible_link_text = rest[open_bracket_position + 1:url_seam_position].strip()
+        url = rest[url_seam_position + 2:close_paren_position].replace('"', "%22")
+
+        if visible_link_text == "":
+            visible_link_text = "missing text"
+
+        finished_text += rest[:open_bracket_position]
+        finished_text += (
+            f'<a href="{url}" target="_blank" rel="noopener">{visible_link_text} '
+            '<span class="fas fa-external-link-alt fa-xs" aria-hidden="true"></span>'
+            '<span class="sr-only">(opens in a new tab)</span></a>'
+        )
+        rest = rest[close_paren_position + 1:]
+
+    return finished_text + rest
+
+# --- OKAY, WE PARSED IT INTO BOXES; PHASE 2, NOW TURN THE BOXES INTO HTML --------------------------------------------
+# --- takes a box and returns a piece of matching HTML ---
+
+def box_to_html(box):
+
+    kind = box["kind"]                  # what kind of critter do we have here?
+
+    if kind == "heading":
+        level = box["level"]
+        if level == 1:
+            alignment = "text-center"   # H1 is always centered
+        else:
+            alignment = "text-left"     # force all lower headers to the left, cuz I hate what Brightspace does
+        tag = "h" + str(level)
+        return f'<{tag} class="{alignment}">{escape(box["text"], quote=False)}</{tag}>'
+                                        # building correct HTML structures, sample: <h1 class="text-center">content</h1>
+
+    if kind =="list":
+        if box["ordered"]:              # remember this was a boolean
+            tag = "ol"
+        else:
+            tag = "ul"                  # I love lists, so simple!
+
+        rows = []                       # initialize, initialize, initialize
+        for item in box["items"]:       # for each item in the list, wrap it in list item tags
+            rows.append(f"<li>{format_inline(item)}</li>")
+
+        all_rows = "\n".join(rows)      # we'll put line breaks in there in case human eyes have to look at this crap
+        return f"<{tag}>\n{all_rows}\n</{tag}>"
+                                        # and return something like <ul><li>first</li><li>second</li></ul>
+
+    if kind == "paragraph":
+        return f'<p>{format_inline(box["text"])}</p>'
+
+    sys.exit(f"What on earth did you send me? We can't convert this {kind}")
+                                        # because every type above has a return statement, if we make it here, we done screwed something up
+
+# --- SO NOW CALCULATE TIME ON TASK FOR THE POOR STUDENT --------------------------------------------------------------
+# --- adds up words not in the title and divides by reading speed ---
+
+def calculate_time_on_task(boxes):
+
+    total_words = 0                     # done initializing, yet? Yeah? Good.
+
+    for box in boxes:
+
+        kind = box["kind"]              # what kind of critter do we have again?
+
+        if kind == "heading":    # reading time typically doesn't include the page title
+            if box["level"] != 1:
+                total_words += len(box["text"].split())
+
+        elif kind == "list":     # gotta add up all the list items
+            for item in box["items"]:
+                total_words += len(item.split())
+
+        elif kind == "paragraph":
+            total_words += len(box["text"].split())
+
+        else:
+            sys.exit(f"What have we done? Can't calculate time on task for {kind}")
+                                        # because we should be matching the types we created...
+    minutes = math.ceil(total_words / WORDS_PER_MINUTE)
+    return minutes
+
+# --- PAGE HEADER TABLE: TIME ON TASK, MATERIALS, ETC, THAT INSTRUCTOR SHOULD REALLY HAVE -----------------------------
+# --- right now, this only does time, but eventually it will setup more ---
+
+def make_page_leader(minutes):
+
+    return (
+        '<!-- callout begin -->\n'
+        '<div class="card card-gold mb-3">\n'
+        '<div class="card-body">\n'
+        '<ul class="list-unstyled small mb-0">\n'
+        '<li class="d-flex align-items-baseline mb-1" style="font-size: 16px;">'
+        '<span style="font-size: 16px;">'
+        '<span class="fas fa-clock fa-fw mr-3" aria-hidden="true"></span>'
+        f'<strong>Time</strong> Reading: {minutes} min'
+        '</span></li>\n'
+        '</ul>\n'
+        '</div>\n'
+        '</div>\n'
+        '<!-- callout end -->'
+    )
+
+# --- IT PUTS THE HTML IN THE TEMPLATE OR ELSE IT GETS THE WONKY FILE AGAIN -------------------------------------------
+# --- takes the template text, boxes, content, works out the title, banner, leader ---
+# --- note that some of this is hardcoded right now but will be added as options later ---
+
+def build_page(template, boxes, content, page_leader):
+
+    # --- find the page title. Will be the H1 tag on the page ---
+    page_title = "Untitled Page"        # in case we don't find one
+    for box in boxes:
+        if box["kind"] == "heading" and box["level"] == 1:
+            page_title = box["text"]
+            break                       # okay, we found it, stop looking
+
+    # --- the banner is fixed for now; we'll give options later ---
+    banner = DEFAULT_PAGE_BANNER
+
+    # --- the time list goes right after the H1; the 1 at the end means only the first </h1> ---
+    content = content.replace("</h1>", "</h1>\n" + page_leader, 1)
+
+    # --- plug 'em in Charlie ---
+    page = template.replace("{{TITLE}}", escape(page_title, quote=False))
+                                        # initialize by loading in the template; replace the title while we're at it
+    page = page.replace("{{BANNER_SRC}}", banner)
+                                        # now load in the top of page banner
+    page = page.replace("{{CONTENT}}", content)
+                                        # and finally content goes in
+    return page
+
+# --- WRITING THE FINISHED FILE ---------------------------------------------------------------------------------------
+# --- lots of stuff could go wrong here ---
+
+def write_file(file_name, text):
+
+    try:
+        with open(file_name, "w", encoding="utf-8") as file:
+            file.write(text)
+
+    except PermissionError:
+        sys.exit(
+            f"Can't save '{file_name}' due to permissions error.\n"
+        )
+
+
+# --- PHASE ONE AS ONE CALL: RAW MARKDOWN IN, LIST OF BOXES OUT -------------------------------------------------------
+# --- cleans the text, fixes bare urls, splits it into chunks, and puts each chunk in a labeled box ---
+# --- main logic and the web page both call this, so the sorting rules live in exactly one place ---
+
+def text_to_boxes(markdown_text):
+
+    markdown_text = clean_text(markdown_text)           # remove any wonky characters
+    markdown_text = structure_bare_urls(markdown_text)  # make sure bare URLs are properly formatted
+    chunks = split_into_chunks(markdown_text)           # split markdown into chunks of text
+
+    boxes = []                                          # initialize this puppy
+    for chunk in chunks:
+        if chunk.startswith("#"):                       # things with hashtags in col 1 are usually headers
+            box = chunk_to_header(chunk)
+        elif chunk.startswith("- ") or chunk.startswith("* "):   # hey look, a bullet list!
+            box = chunk_to_list(chunk)
+        elif chunk.startswith("1. "):                   # ooooh, a numbered list... we be callin the same function
+            box = chunk_to_list(chunk)
+        else:
+            box = make_paragraph(chunk)                 # everything else is a damn paragraph
+
+        boxes.append(box)                               # whatever kind of box we just made, add it to the output list
+
+    return boxes
+
+# === MAIN LOGIC STARTS HERE ==========================================================================================
+# --- everything below only runs when you run this file directly (python md2bsp.py) ---
+# --- when the web page imports this file, it only gets the functions above and skips all of this ---
+
+if __name__ == "__main__":
+
+    # --- Hello, world! ---
+    print("Welcome to the Markdown to Brightspace Conversion Tool!")
+    print()
+
+    brightspace_wrapper = read_file(TEMPLATE_FILE)
+    markdown_content = read_file(INPUT_FILE)
+
+    # --- Sanity check: did both files load? ---
+    print(f"Template {TEMPLATE_FILE} loaded: ({len(brightspace_wrapper)} characters)")
+    print(f"Content file {INPUT_FILE} loaded: ({len(markdown_content)} characters)")
+    print()
+
+    # --- Phase One: clean the text, split it into chunks, put each chunk in a labeled box ---
+    boxes = text_to_boxes(markdown_content)
+
+    print("Made", len(boxes), "boxes")          # --- Sanity check: how many boxes did we make? ---
+    if TESTING:
+        for box in boxes:
+            print(box)
+            print()
+
+    # --- Phase Two: process boxes of content into proper HTML ---
+
+    html_pieces = []                            # sing it with me: ih-nih-shul-eyes!
+    for box in boxes:
+        html_pieces.append(box_to_html(box))
+
+    page_content = "\n".join(html_pieces)       # newlines cuz humans have to check it
+
+    if TESTING:
+        print(page_content)
+
+    # --- Phase Three: put the content in the standard Brightspace template and ship it ---
+
+    minutes = calculate_time_on_task(boxes)     # calculate time on task
+    page_leader = make_page_leader(minutes)     # setup the first of the top of page headers
+
+    finished_page = build_page(brightspace_wrapper, boxes, page_content, page_leader)
+    write_file(OUTPUT_FILE, finished_page)
+
+    print(f"Saved {OUTPUT_FILE}")               # --- Sanity check: did we make it? ---
