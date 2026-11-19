@@ -23,7 +23,7 @@
 
     <form>
       <div class="columns">
-
+      <div>
         <section class="card">
           <label for="markdown-input" class="visually-hidden">Markdown content</label>
           <textarea id="markdown-input" placeholder="Paste your markdown here"></textarea>
@@ -31,6 +31,9 @@
           <p id="status" class="status">Waiting for Python...</p>
         </section>
 
+        <div id="boxes"></div>
+      </div>
+        
         <aside class="card">
           <h2>How this works</h2>
           <ol>
@@ -44,7 +47,7 @@
 
       <div class="action-bar">
         <button type="button" id="go-button" class="primary" disabled>Chunk it</button>
-        <button type="reset" class="secondary">Clear</button>
+        <button type="reset" id="clear-button" class="secondary">Clear</button>
       </div>
     </form>
   </main>
