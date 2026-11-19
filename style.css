@@ -1,3 +1,26 @@
+/* Lato, hosted in this repo (SIL Open Font License, see fonts/ folder) */
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/Lato-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/Lato-Italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/Lato-Bold.woff2') format('woff2');
+}
+
 :root {
   --page: #f6f7f8;
   --blue: #0072ce;
