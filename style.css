@@ -11,6 +11,11 @@
   --rule: #cdd5dc;
 }
 
+/* A hidden thing stays hidden, no matter what other rules say about its display */
+[hidden] {
+  display: none !important;
+}
+
 html {
   scroll-padding-bottom: 110px;
 }
@@ -102,6 +107,11 @@ textarea {
 .box-text {
   margin: 0;
   white-space: pre-wrap;   /* keeps line breaks, so list items stay on separate lines */
+}
+
+/* The boxes area gets focus from Python when the screen switches; no outline needed on a plain container */
+#boxes:focus-visible {
+  outline: none;
 }
 
 button {
