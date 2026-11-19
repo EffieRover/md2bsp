@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Loy's MD2BSP Tool</title>
   <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/all.min.css">
   <script type="module" src="https://pyscript.net/releases/2025.10.3/core.js"></script>
 </head>
 <body>
@@ -33,7 +34,7 @@
 
           <div id="boxes" tabindex="-1" hidden></div>
 
-          <p id="result" aria-live="polite"></p>
+          <p id="result" class="visually-hidden" aria-live="polite"></p>
           <p id="status" class="status">Waiting for Python...</p>
         </div>
 
@@ -48,8 +49,8 @@
 
           <ol id="help-organize" hidden>
             <li>Each box is one piece of your page.</li>
-            <li>The label on each box shows what the tool thinks it is.</li>
-            <li>Click <strong>Back</strong> to fix your pasted text.</li>
+            <li>Use the dropdown on each box to change what it is (heading, list, paragraph). The preview shows how it will look.</li>
+            <li>Need to split a box or fix your content? Click Back, add a blank line where you want the split, and chunk it again.</li>
           </ol>
         </aside>
 
