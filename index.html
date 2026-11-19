@@ -17,6 +17,7 @@
     <ol class="steps">
       <li id="step-paste" aria-current="step">1: Paste</li>
       <li id="step-organize">2: Organize</li>
+      <li id="step-preview">3: Preview</li>
     </ol>
   </nav>
 
@@ -33,6 +34,7 @@
           </section>
 
           <div id="boxes" tabindex="-1" hidden></div>
+          <section id="page-preview" class="card preview" tabindex="-1" hidden></section>
 
           <p id="result" class="visually-hidden" aria-live="polite"></p>
           <p id="status" class="status">Waiting for Python...</p>
@@ -54,6 +56,13 @@
             <li>Spot a typo or vague link? Click the pencil to edit that box's content, then click the check mark when you're done.</li>
             <li>Fix every accessibility or best practice issue listed below. When the list says "Nothing to fix," you've cleared everything this tool checks for.</li>
           </ol>
+
+          <ol id="help-preview" hidden>
+            <li>This is a simulation of your finished page. The real page gets its look from Brightspace, so check it there too.</li>
+            <li>Anything still listed under Things to fix will go out as it is. You can go back and fix it first.</li>
+            <li>Click Download to save the page, then upload it to Brightspace.</li>
+          </ol>
+          
           <div id="issues" hidden>
             <h2>Things to fix</h2>
             <ul id="issues-list"></ul>
@@ -66,6 +75,8 @@
         <button type="button" id="go-button" class="primary" disabled>Chunk it</button>
         <button type="reset" id="clear-button" class="secondary">Clear</button>
         <button type="button" id="back-button" class="secondary" hidden>Back</button>
+        <button type="button" id="preview-button" class="primary" hidden>Preview</button>
+        <button type="button" id="download-button" class="primary" hidden>Download</button>
       </div>
     </form>
   </main>
