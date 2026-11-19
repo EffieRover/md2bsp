@@ -486,6 +486,18 @@ def change_box_type(box, type_name):
     new_box["lines"] = lines
     return new_box
 
+# --- THE INSTRUCTOR EDITED A BOX'S WORDS: RETURN A NEW BOX OF THE SAME TYPE WITH THE NEW WORDS --------------------------
+# --- same cleanup the pasted text got, then blank lines vanish; one line per list item, one box stays one box ---
+# --- if they erased everything, hand back the box we were given (an empty box would break things) ---
+
+def edit_box_text(box, new_text):
+
+    new_text = structure_bare_urls(clean_text(new_text))    # curly quotes and bare urls get the same treatment as pasted text
+    lines = [line.strip() for line in new_text.splitlines() if line.strip() != ""]
+    if not lines:
+        return box
+    return change_box_type({"lines": lines}, box_type_name(box))
+
 # --- FIND EVERY [TEXT](URL) IN A PIECE OF TEXT: RETURN A LIST OF (TEXT, URL) PAIRS ----------------------------------
 # --- same hunt as format_inline, but on raw text, and it only reports; it doesn't change anything ---
 
