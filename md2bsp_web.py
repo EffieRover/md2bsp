@@ -382,26 +382,39 @@ def calculate_time_on_task(boxes):
     minutes = math.ceil(total_words / WORDS_PER_MINUTE)
     return minutes
 
-# --- PAGE HEADER TABLE: TIME ON TASK, MATERIALS, ETC, THAT INSTRUCTOR SHOULD REALLY HAVE -----------------------------
-# --- right now, this only does time, but eventually it will setup more ---
+# --- PAGE HEADER LIST: TIME ON TASK, MATERIALS, ETC, THAT INSTRUCTOR SHOULD REALLY HAVE ---------------------------------
+# --- three small pieces: one makes a single row, one wraps the rows in the gold callout, one decides which rows exist ---
+# --- right now only the Time row exists; more rows will plug into make_page_leader as we add them ---
 
-def make_page_leader(minutes):
+def make_leader_row(icon, label, text):
 
+    return (
+        '<li class="d-flex align-items-baseline mb-1">'
+        f'<span class="fas {icon} fa-fw mr-3" aria-hidden="true"></span>'  # the icon is its own piece, so long text wraps in a clean column
+        f'<span><strong>{escape(label, quote=False)}</strong> {escape(text, quote=False)}</span>'
+        '</li>'
+    )
+
+def wrap_leader_rows(rows):
+
+    all_rows = "\n".join(rows)              # human eyes will read this, so one row per line
     return (
         '<!-- callout begin -->\n'
         '<div class="card card-gold mb-3">\n'
         '<div class="card-body">\n'
-        '<ul class="list-unstyled small mb-0">\n'
-        '<li class="d-flex align-items-baseline mb-1" style="font-size: 16px;">'
-        '<span style="font-size: 16px;">'
-        '<span class="fas fa-clock fa-fw mr-3" aria-hidden="true"></span>'
-        f'<strong>Time</strong> Reading: {minutes} min'
-        '</span></li>\n'
+        '<ul class="list-unstyled mb-0" style="font-size: 16px;">\n'      # 16px set once, here, for every row
+        f'{all_rows}\n'
         '</ul>\n'
         '</div>\n'
         '</div>\n'
         '<!-- callout end -->'
     )
+
+def make_page_leader(minutes):
+
+    rows = []                               # only the rows that have something to say go in here
+    rows.append(make_leader_row("fa-clock", "Time", f"Reading: {minutes} min"))
+    return wrap_leader_rows(rows)
 
 # --- IT PUTS THE HTML IN THE TEMPLATE OR ELSE IT GETS THE WONKY FILE AGAIN -------------------------------------------
 # --- takes the template text, boxes, content, works out the title, banner, leader ---
