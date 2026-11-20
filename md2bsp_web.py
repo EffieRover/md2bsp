@@ -8,32 +8,49 @@ WHAT IT DOES:
     Words I use: a CHUNK is a piece of the raw text (a heading, a paragraph, a list).
                  a BOX is a chunk after the program has decided what it is and labeled it.
     Phase 1: pull apart the input file into chunks and put each chunk in a labeled box
-        Planned Phase 1.1: suggest labels and allow instructor to adjust / mash up boxes
-        Planned Phase 1.2: remind instructor to include header items such as reading length and needed materials
+        Phase 1.1 (done, on the web page): the instructor can relabel boxes, fix typos and links, and dress a box up as a callout
+        Phase 1.2 (done, on the web page): a Finishing Touches screen asks for reading length, materials needed, 
+            key terms, guiding questions, and Week/Unit/Module
     Phase 2: convert those boxes into HTML
-    Phase 3: drop the HTML into the template file and save it
+    Phase 3: drop the HTML into the template file and save it (on the web page, Download does this)
 
-HOW TO RUN IT:
+    This file is the engine. main.py and index.html run it in the browser through PyScript:
+    https://effierover.github.io/md2bsp/
+
+HOW TO RUN IT (engine only, from the command line):
     1. Keep template_gcc.html in the same folder as this file.
     2. Keep input.md in the same folder as this file.
     3. Run: python md2bsp_web.py 
     4. Open output.html and look inside it. 
 
 KNOWN ISSUES:
-    1. It currently only reads and outputs a fixed file name
+    1. The command-line run only reads and outputs fixed file names
     2. Numbered lists must start with 1. and a space
     3. Bulleted lists must start with either * or - and a space
     4. Does not manage nested lists
     5. ***both*** writes crossed tags that Brightspace quietly corrects
+    6. Headings deeper than H4 (##### and ######) become H4
+    7. Links inside headings are not turned into links or checked
+    8. Only http:// and https:// links are recognized; a web address ending in ) can be cut short
+    9. A heading glued to its paragraph with no blank line stays one heading box
+    10. Underscores for italics are not supported (asterisks only)
+    11. Going Back to step 1 on the web page erases relabels and edits
+
+DONE:
+    1. Web version (GitHub Pages + PyScript): paste, chunk, show the boxes, let the instructor relabel and edit them
+    2. Finished page delivered as a download
+    3. Before you start, materials needed, key terms, guiding questions, working toward, and time on task at the top of the page
+    4. Week/Unit/Module and Last published at the bottom of the page
+    5. Callouts: any box except a heading can be dressed up as a blue icon card
 
 TODO:
     1. Recognize and format videos in an accessible (WCAG) manner
-    2. Web version (GitHub Pages + PyScript): paste, chunk, show the boxes, let the instructor relabel them
-    3. Accept uploaded markdown files; deliver the finished page as a download
-    4. Start the suggestion engine ... callouts, accordions, tabs, blockquotes
-    5. Deliver modification engine ... allow instructor to set callouts, accordions, tabs, etc
-    6. Ask for before you begin, materials needed, CLO, Unit/Week/Module
-    7. Insert items at top or bottom of page as appropriate.
+    2. Accordions, tabs, blockquotes (dressing up boxes the way callouts do)
+    3. Accept uploaded markdown and Word files; convert pasted web content
+    4. Start the suggestion engine ... suggest callouts, accordions, tabs
+    5. A Best Practices review step: missing closings, skipped heading levels, image alt text
+    6. Carry relabels and edits back when the instructor goes Back to step 1
+    7. A generic template for people outside GCC
 
 """
 # --- IMPORTS ---------------------------------------------------------------------------------------------------------
