@@ -619,6 +619,8 @@ def change_box_type(box, type_name):
     else:
         return box
     new_box["lines"] = lines
+    if box.get("callout"):                  # a callout stays a callout when the box changes type
+        new_box["callout"] = box["callout"]
     return new_box
 
 # --- ALL THE BOXES AS ONE LONG STRING OF HTML (NO TIME CARD YET) --------------------------------------------------------
@@ -723,7 +725,7 @@ def edit_box_text(box, new_text):
         lines = lines_to_items(lines)       # markers only mean something inside a list
     if not lines:
         return box
-    return change_box_type({"lines": lines}, type_name)
+    return change_box_type({"lines": lines, "callout": box.get("callout", "")}, type_name)
 
 # --- FIND EVERY [TEXT](URL) IN A PIECE OF TEXT: RETURN A LIST OF (TEXT, URL) PAIRS ----------------------------------
 # --- same hunt as format_inline, but on raw text, and it only reports; it doesn't change anything ---
