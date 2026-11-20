@@ -20,6 +20,7 @@ DETAIL_FIELDS = {
     "working": "detail-working",
     "external": "detail-external",
     "video": "detail-video",
+    "activity": "detail-activity",
 }
 
 # --- read whatever the instructor typed into those fields right now; an untouched field is just empty text ---
