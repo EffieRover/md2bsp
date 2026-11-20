@@ -561,3 +561,45 @@ aside.card:focus-visible {
 #page-preview .accordion .card-body > :last-child {
     margin-bottom: 0;                       /* no extra gap under the last thing in the panel */
 }
+
+/* THE VIDEO FIELDS UNDER A VIDEO BOX: TITLE, LENGTH, LANGUAGE */
+.video-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    margin-top: 12px;
+}
+
+.video-fields[hidden] {                     /* display:flex above would otherwise beat the hidden attribute */
+    display: none;
+}
+
+.video-fields > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.video-field-title {
+    flex: 3 1 260px;
+}
+
+.video-field-length {
+    flex: 1 1 120px;
+}
+
+.video-field-language {
+    flex: 2 1 200px;
+}
+
+.video-fields label {
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.video-fields input {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 1rem;
+    padding: 0.4em 0.5em;
+}
