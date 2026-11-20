@@ -388,3 +388,38 @@ textarea::placeholder {
 .preview .mb-1 { margin-bottom: .25rem; }
 .preview .mr-3 { margin-right: 1rem; }
 .preview .fa-fw { width: 1.25em; text-align: center; flex: 0 0 1.25em; }
+
+/* page details (step 3): label above field, padded rounded boxes, times in a row */
+#page-details label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+#page-details .detail-field {
+  display: block;
+  width: 100%;
+  height: auto;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: .95rem;
+  background: #fff;
+  border: 1px solid var(--field-border, #8a97a3);
+  border-radius: 6px;
+}
+
+#page-details textarea.detail-field {
+  resize: vertical;
+}
+
+.detail-times {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.detail-times > div {
+  flex: 1 1 140px;
+}
