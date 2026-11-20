@@ -425,10 +425,48 @@ def wrap_leader_rows(rows):
         '<!-- callout end -->'
     )
 
-def make_page_leader(minutes):
+# --- THE WORDS FOR THE TIME ROW: READING ALWAYS, THE OTHERS ONLY IF THE INSTRUCTOR GAVE MINUTES ---
+
+def make_time_text(minutes, details):
+
+    pieces = [f"Reading: {minutes} min"]
+    extras = [("external", "External Reading"), ("video", "Video"), ("activity", "Activity")]
+    for key, label in extras:
+        value = one_line(details.get(key, ""))
+        if value.isdigit() and int(value) > 0:    # isdigit keeps out blanks, minus signs, and "abc"
+            pieces.append(f"{label}: {int(value)} min")
+    return " | ".join(pieces)
+
+# --- THE GOLD CARD UNDER THE H1: A TIME ROW ALWAYS, THEN ONE ROW FOR EACH BOX THE INSTRUCTOR FILLED IN ---
+
+def make_page_leader(minutes, details=None):
+
+    if details is None:                     # the command-line run has no web page to ask, so it passes nothing
+        details = {}
 
     rows = []                               # only the rows that have something to say go in here
-    rows.append(make_leader_row("fa-clock", "Time", f"Reading: {minutes} min"))
+    rows.append(make_leader_row("fa-clock", "Time", make_time_text(minutes, details)))
+
+    before = one_line(details.get("before", ""))
+    if before != "":
+        rows.append(make_leader_row("fa-clipboard-list", "Before you start", before))
+
+    materials = one_line(details.get("materials", ""))
+    if materials != "":
+        rows.append(make_leader_row("fa-tools", "Materials needed", materials))
+
+    terms = one_line(details.get("terms", ""))
+    if terms != "":
+        rows.append(make_leader_row("fa-key", "Key terms", terms))
+
+    questions = [one_line(line) for line in details.get("questions", "").splitlines() if one_line(line) != ""]
+    if questions:
+        rows.append(make_leader_list_row("fa-question-circle", "Guiding questions", questions))
+
+    working = one_line(details.get("working", ""))
+    if working != "":
+        rows.append(make_leader_row("fa-bullseye", "Working toward", working))
+
     return wrap_leader_rows(rows)
 
 # --- IT PUTS THE HTML IN THE TEMPLATE OR ELSE IT GETS THE WONKY FILE AGAIN -------------------------------------------
@@ -527,18 +565,18 @@ def boxes_to_content(boxes):
 # --- THE PREVIEW: THE CONTENT WITH THE TIME CARD DROPPED IN RIGHT AFTER THE H1, SAME AS THE REAL PAGE ---
 # --- no template here; the template's styles only exist inside Brightspace, so this is a simulation ---
 
-def make_preview_html(boxes):
+def make_preview_html(boxes, details=None):
 
     content = boxes_to_content(boxes)
-    page_leader = make_page_leader(calculate_time_on_task(boxes))
+    page_leader = make_page_leader(calculate_time_on_task(boxes), details)
     return content.replace("</h1>", "</h1>\n" + page_leader, 1)
 
 # --- THE REAL THING: THE WHOLE FINISHED PAGE, READY TO SAVE AS A FILE ---
 
-def make_finished_page(template, boxes):
+def make_finished_page(template, boxes, details=None):
 
     content = boxes_to_content(boxes)
-    page_leader = make_page_leader(calculate_time_on_task(boxes))
+    page_leader = make_page_leader(calculate_time_on_task(boxes), details)
     return build_page(template, boxes, content, page_leader)
 
 # --- WHAT TO CALL THE DOWNLOADED FILE: THE PAGE TITLE, LOWERCASE, WITH HYPHENS ---
