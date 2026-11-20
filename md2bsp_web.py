@@ -744,6 +744,19 @@ def make_accordion_html(run_boxes):
         '<!-- accordion end -->'
     )
 
+# --- THE INSTRUCTOR JUST MARKED A TITLE: IF THE BOX UNDER IT IS UNDRESSED, MAKE IT THE ACCORDION CONTENT ---
+# --- (a callout or an existing accordion mark is left alone; Needed Repairs speaks up if that causes trouble) ---
+
+def mark_content_after_title(boxes, title_index):
+
+    next_index = title_index + 1
+    if next_index >= len(boxes):
+        return False                                     # the title is the last box; nothing under it
+    if boxes[next_index].get("dressing", "") != "":
+        return False                                     # already dressed as something; not our call
+    boxes[next_index] = set_box_callout(boxes[next_index], "accordion-content")
+    return True
+
 # --- ALL THE BOXES AS ONE LONG STRING OF HTML (NO TIME CARD YET) --------------------------------------------------------
 # --- the web page and the command line both start from here ---
 
