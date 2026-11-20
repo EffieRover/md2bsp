@@ -17,7 +17,8 @@
     <ol class="steps">
       <li id="step-paste" aria-current="step">1: Paste</li>
       <li id="step-organize">2: Organize</li>
-      <li id="step-preview">3: Preview</li>
+      <li id="step-finish">3: Finishing Touches</li>
+      <li id="step-preview">4: Preview</li>
     </ol>
   </nav>
 
@@ -34,6 +35,35 @@
           </section>
 
           <div id="boxes" tabindex="-1" hidden></div>
+
+          <section id="page-details" class="card" tabindex="-1" hidden>
+            <h2>Page details</h2>
+            <p class="field-note">Fill in only what applies. Empty fields won't show up on the page.</p>
+
+            <label for="detail-before">Before you start</label>
+            <textarea id="detail-before" class="detail-field" rows="2"></textarea>
+
+            <label for="detail-materials">Materials needed</label>
+            <textarea id="detail-materials" class="detail-field" rows="2"></textarea>
+
+            <label for="detail-terms">Key terms</label>
+            <textarea id="detail-terms" class="detail-field" rows="3"></textarea>
+            <p class="field-note">One per line.</p>
+
+            <label for="detail-questions">Guiding questions</label>
+            <textarea id="detail-questions" class="detail-field" rows="3"></textarea>
+            <p class="field-note">One per line. Most pages need Key terms or Guiding questions, not both.</p>
+
+            <label for="detail-working">Working toward</label>
+            <textarea id="detail-working" class="detail-field" rows="2"></textarea>
+
+            <label for="detail-external">External reading (minutes)</label>
+            <input type="number" id="detail-external" class="detail-field" min="0">
+
+            <label for="detail-video">Video (minutes)</label>
+            <input type="number" id="detail-video" class="detail-field" min="0">
+          </section>
+
           <section id="page-preview" class="card preview" tabindex="-1" hidden></section>
 
           <p id="result" class="visually-hidden" aria-live="polite"></p>
@@ -57,12 +87,19 @@
             <li>Fix every accessibility or best practice issue listed below. When the list says "Nothing to fix," you've cleared everything this tool checks for.</li>
           </ol>
 
+          <ol id="help-finish" hidden>
+            <li>Fill in only what applies to this page. Empty fields don't show up on the page.</li>
+            <li>Most pages need Key terms or Guiding questions, not both.</li>
+            <li>Reading and video times are in minutes. Leave them blank if there's nothing to time.</li>
+            <li>Check Needed Repairs below. Anything still listed needs a trip back to step 2.</li>
+          </ol>
+
           <ol id="help-preview" hidden>
             <li>This is a simulation of your finished page. The real page gets its look from Brightspace, so check it there too.</li>
-            <li>Anything still listed under Things to fix will go out as it is. You can go back and fix it first.</li>
+            <li>Anything still listed under Needed Repairs will go out as it is. You can go back and fix it first.</li>
             <li>Click Download to save the page, then upload it to Brightspace.</li>
           </ol>
-          
+
           <div id="issues" hidden>
             <h2>Needed Repairs</h2>
             <ul id="issues-list"></ul>
@@ -75,7 +112,8 @@
         <button type="button" id="go-button" class="primary" disabled>Chunk it</button>
         <button type="reset" id="clear-button" class="secondary">Clear</button>
         <button type="button" id="back-button" class="secondary" hidden>Back</button>
-        <button type="button" id="preview-button" class="primary" hidden>Preview</button>
+        <button type="button" id="finish-button" class="primary" hidden>Next: Finishing Touches</button>
+        <button type="button" id="preview-button" class="primary" hidden>Next: Preview</button>
         <button type="button" id="download-button" class="primary" hidden>Download</button>
       </div>
     </form>
