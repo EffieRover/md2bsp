@@ -794,7 +794,7 @@ def find_issues(boxes):
         for text in texts:
             for link_text, url in find_links(text):
                 if link_text_is_weak(link_text, url):
-                    issues.append(f"<strong>Box {number}</strong>: link ({url}) is missing descriptive text.")
+                    issues.append(f"Box {number}: link ({url}) is missing descriptive text.")
     return issues
 
 # --- PHASE ONE AS ONE CALL: RAW MARKDOWN IN, LIST OF BOXES OUT -------------------------------------------------------
