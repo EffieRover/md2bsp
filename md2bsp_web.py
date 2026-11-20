@@ -668,15 +668,101 @@ def keep_valid_dressing(box):
     if box.get("dressing", "") not in valid_names:
         return set_box_callout(box, "")
     return box
-    
+
+# --- ACCORDIONS: A STRETCH OF CONSECUTIVE ACCORDION-MARKED BOXES BECOMES ONE ACCORDION ---
+# --- a title opens a panel; the content boxes after it fill the panel; a stretch that doesn't follow that pattern stays plain ---
+
+def is_accordion_piece(box):
+    return box.get("dressing", "") in ("accordion-title", "accordion-content")
+
+def find_accordion_runs(boxes):
+
+    runs = []                                # each run is (first index, index after the last)
+    start = None
+    for index, box in enumerate(boxes):
+        if is_accordion_piece(box):
+            if start is None:
+                start = index                # a new stretch begins here
+        elif start is not None:
+            runs.append((start, index))      # a plain box ends the stretch
+            start = None
+    if start is not None:
+        runs.append((start, len(boxes)))     # the stretch ran to the end of the page
+    return runs
+
+def accordion_run_is_valid(run_boxes):
+
+    if run_boxes[0].get("dressing") != "accordion-title":
+        return False                         # content with no title above it
+    for index, box in enumerate(run_boxes):
+        if box.get("dressing") == "accordion-title":
+            if index + 1 >= len(run_boxes):
+                return False                 # a title at the very end has no content
+            if run_boxes[index + 1].get("dressing") == "accordion-title":
+                return False                 # a title right before another title has no content
+    return True
+
+def clean_accordion_title(text):
+
+    text = text.replace("&nbsp;", " ")       # no-break spaces are just clutter in a title
+    return " ".join(text.split())            # split() also treats the real no-break character as a space
+
+def make_accordion_html(run_boxes):
+
+    cards = []
+    index = 0
+    while index < len(run_boxes):
+        title_box = run_boxes[index]
+        index += 1
+        pieces = []
+        while index < len(run_boxes) and run_boxes[index].get("dressing") == "accordion-content":
+            pieces.append(box_to_plain_html(run_boxes[index]))
+            index += 1
+        tag = "h" + str(title_box["level"])  # the title keeps the heading level the instructor chose
+        title = escape(clean_accordion_title(title_box["text"]), quote=False)
+        inner = "\n".join(pieces)
+        cards.append(
+            '<div class="card">\n'
+            '<div class="card-header">\n'
+            f'<{tag} class="card-title text-left">{title}</{tag}>\n'
+            '</div>\n'
+            '<div class="collapse">\n'
+            '<div class="card-body">\n'
+            f'{inner}\n'
+            '</div>\n'
+            '</div>\n'
+            '</div>'
+        )
+    all_cards = "\n".join(cards)
+    return (
+        '<!-- accordion begin -->\n'
+        '<div class="container-fluid">\n'
+        '<div class="accordion">\n'
+        f'{all_cards}\n'
+        '</div>\n'
+        '</div>\n'
+        '<!-- accordion end -->'
+    )
+
 # --- ALL THE BOXES AS ONE LONG STRING OF HTML (NO TIME CARD YET) --------------------------------------------------------
 # --- the web page and the command line both start from here ---
 
 def boxes_to_content(boxes):
 
+    run_ends = {}                           # where each accordion stretch starts -> where it ends
+    for start, end in find_accordion_runs(boxes):
+        if accordion_run_is_valid(boxes[start:end]):
+            run_ends[start] = end            # only stretches that follow the pattern become accordions
+
     pieces = []
-    for box in boxes:
-        pieces.append(box_to_html(box))
+    index = 0
+    while index < len(boxes):
+        if index in run_ends:
+            pieces.append(make_accordion_html(boxes[index:run_ends[index]]))
+            index = run_ends[index]          # hop past all the boxes the accordion used
+        else:
+            pieces.append(box_to_html(boxes[index]))
+            index += 1
     return "\n".join(pieces)               # newlines cuz humans have to check it
 
 # --- THE PREVIEW: THE CONTENT WITH THE TIME CARD DROPPED IN RIGHT AFTER THE H1, SAME AS THE REAL PAGE ---
