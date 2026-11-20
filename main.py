@@ -21,6 +21,8 @@ DETAIL_FIELDS = {
     "external": "detail-external",
     "video": "detail-video",
     "activity": "detail-activity",
+    "unit_type": "detail-unit-type",
+    "unit_number": "detail-unit-number",
 }
 
 # --- read whatever the instructor typed into those fields right now; an untouched field is just empty text ---
