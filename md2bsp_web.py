@@ -401,7 +401,7 @@ def make_leader_list_row(icon, label, lines):       # for guiding questions: the
     return (
         '<li class="d-flex align-items-baseline mb-1">'
         f'<span class="fas {icon} fa-fw mr-3" aria-hidden="true"></span>'
-        f'<span><strong>{escape(label, quote=False)}</strong><br>{"<br>".join(escaped_lines)}</span>'
+        f'<span><strong>{escape(label, quote=False)}</strong> {" ".join(escaped_lines)}</span>'
         '</li>'
     )
 
