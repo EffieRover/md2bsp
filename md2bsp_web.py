@@ -107,14 +107,14 @@ BOX_TYPE_CHOICES = [
 # --- a box with no callout simply has no "callout" key, or an empty one ---
 
 CALLOUT_CHOICES = [
-    ("question", "Question", "fa-question-circle"),
-    ("key", "Key idea", "fa-exclamation-circle"),
-    ("tip", "Tip", "fa-lightbulb"),
-    ("quote", "Quote", "fa-quote-left"),
-    ("steps", "Steps", "fa-project-diagram"),
-    ("plan", "Plan", "fa-map"),
-    ("documents", "Documents", "fa-copy"),
-    ("reminder", "Reminder", "fa-bell"),
+    ("question", "Callout Question", "fa-question-circle"),
+    ("key", "Callout Key idea", "fa-exclamation-circle"),
+    ("tip", "Callout Tip", "fa-lightbulb"),
+    ("quote", "Callout Quote", "fa-quote-left"),
+    ("steps", "Callout Steps", "fa-project-diagram"),
+    ("plan", "Callout Plan", "fa-map"),
+    ("documents", "Callout Documents", "fa-copy"),
+    ("reminder", "Callout Reminder", "fa-bell"),
 ]
 
 # --- READING THE INPUT FILE ------------------------------------------------------------------------------------------
@@ -688,11 +688,11 @@ def dressing_choices(box):
 
     choices = [("", "None")]
     if box["kind"] == "heading":
-        choices.append(("accordion-title", "Accordion title"))
+        choices.append(("accordion-title", "Accordion Title"))
     else:
         for name, label, icon_class in CALLOUT_CHOICES:
             choices.append((name, label))
-    choices.append(("accordion-content", "Accordion content"))
+    choices.append(("accordion-content", "Accordion Content"))
     return choices
 
 def keep_valid_dressing(box):
@@ -864,12 +864,12 @@ def make_video_html(info, title, length, language, number):
         '<div class="video-wrapper">\n'
         f'<div class="embed-responsive embed-responsive-16by9"><iframe class="embed-responsive-item" src="{escape(info["embed"])}" title="{iframe_title}" allowfullscreen="allowfullscreen"></iframe></div>\n'
         '<div class="video-text">\n'
-        f'<p>Direct Link: <a href="{escape(info["direct"])}" class="new-window" target="_blank" id="new-window{number}" '
+        f'<p class="text-center">Direct Link: <a href="{escape(info["direct"])}" class="new-window" target="_blank" id="new-window{number}" '
         'data-original-title="opens in new window/tab" data-toggle="tooltip" rel="noopener">'
-        f'{link_text}<span class="sr-only">(this link opens in a new window/tab)</span></a></p>\n'
-        f'<p>{details_line}</p>\n'
+        f'{link_text}<span class="sr-only">(this link opens in a new window/tab)</span></a><br>\n'
+        f'{details_line}</p>\n'
         '</div>\n'
-        '</div>'
+        '</div>\n'
     )
 
 # --- A VIDEO BOX REMEMBERS ITS TITLE, LENGTH AND LANGUAGE IN box["video"]; UNTOUCHED FIELDS HAVE DEFAULTS ---
