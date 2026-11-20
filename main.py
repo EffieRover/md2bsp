@@ -121,7 +121,7 @@ def make_box_frame(number, box):
         option.value = value
         option.innerText = label
         callout_picker.appendChild(option)
-    callout_picker.value = box.get("callout", "")
+    callout_picker.value = box.get("dressing", "")
     callout_picker.hidden = box["kind"] == "heading"    # headings can't be callouts
 
     edit_button = document.createElement("button")   # one button that flips between Edit and Done
