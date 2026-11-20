@@ -395,6 +395,21 @@ def make_leader_row(icon, label, text):
         '</li>'
     )
 
+def make_leader_list_row(icon, label, lines):       # for guiding questions: the label, then each question on its own line
+
+    escaped_lines = [escape(line, quote=False) for line in lines]
+    return (
+        '<li class="d-flex align-items-baseline mb-1">'
+        f'<span class="fas {icon} fa-fw mr-3" aria-hidden="true"></span>'
+        f'<span><strong>{escape(label, quote=False)}</strong><br>{"<br>".join(escaped_lines)}</span>'
+        '</li>'
+    )
+
+# --- A TYPED BOX MIGHT HAVE LINE BREAKS OR EXTRA SPACES IN IT; MAKE IT ONE TIDY LINE ---
+
+def one_line(text):
+    return " ".join(text.split())
+
 def wrap_leader_rows(rows):
 
     all_rows = "\n".join(rows)              # human eyes will read this, so one row per line
