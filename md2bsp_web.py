@@ -1080,6 +1080,25 @@ def find_issues(boxes):
     issues.sort(key=lambda pair: pair[0])           # sort() keeps ties in the order we added them
     return [sentence for number, sentence in issues]
 
+# --- A PARAGRAPH THAT IS NOTHING BUT ONE VIDEO LINK STARTS OUT AS A VIDEO BOX ---
+# --- if the link already has real words ([Intro to Excel](https://youtu.be/...)), those words become the starting title ---
+
+def is_lone_video_link(text):
+
+    links = find_links(text)
+    if len(links) != 1:
+        return False
+    link_text, url = links[0]
+    return text.strip() == f"[{link_text}]({url})" and parse_video_url(url) is not None
+
+def make_lone_video_box(text):
+
+    box = {"kind": "video", "text": text}
+    link_text, url = find_links(text)[0]
+    if link_text.strip() != "" and not link_text_is_weak(link_text, url):
+        box["video"] = {"title": link_text.strip(), "length": "", "language": VIDEO_DEFAULT_LANGUAGE}
+    return box
+
 # --- PHASE ONE AS ONE CALL: RAW MARKDOWN IN, LIST OF BOXES OUT -------------------------------------------------------
 # --- cleans the text, fixes bare urls, splits it into chunks, and puts each chunk in a labeled box ---
 # --- main logic and the web page both call this, so the sorting rules live in exactly one place ---
@@ -1100,6 +1119,8 @@ def text_to_boxes(markdown_text):
             box = chunk_to_list(chunk)
         else:
             box = make_paragraph(chunk)                 # everything else is a damn paragraph
+            if is_lone_video_link(chunk):               # unless it's nothing but a video link, which is almost certainly meant as a video
+                box = make_lone_video_box(chunk)
 
         boxes.append(box)                               # whatever kind of box we just made, add it to the output list
 
