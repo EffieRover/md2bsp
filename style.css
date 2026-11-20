@@ -645,6 +645,7 @@ aside.card:focus-visible {
 
 .preview .video-text p {
     margin: 0 0 0.25em;
+    text-align: center;
 }
 
 .preview a.new-window::after {              /* the little "opens in a new window" arrow, from Font Awesome 5 (external-link-alt) */
