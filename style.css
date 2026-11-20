@@ -500,3 +500,63 @@ aside.card:focus-visible {
     width: 100%;
   }
 }
+
+/* ACCORDIONS IN THE PREVIEW: always shown open, like Brightspace's editing view; only the finished-page preview gets this */
+#page-preview .container-fluid {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+#page-preview .accordion {
+    border: 1px solid #cdd5dc;
+    margin: 1em 0;
+}
+
+#page-preview .accordion .card {            /* undo the app's own .card look (padding, border, rounding) */
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #ffffff;
+}
+
+#page-preview .accordion .card + .card {    /* the thicker line between one accordion and the next */
+    border-top: 2px solid #cdd5dc;
+}
+
+#page-preview .accordion .card-header {
+    position: relative;
+    padding: 20px 20px 20px 70px;           /* leaves room on the left for the chevron */
+    background: #ffffff;
+    border-bottom: 2px solid #cdd5dc;       /* the line under the title, because the content is always open here */
+}
+
+#page-preview .accordion .card-header::before {    /* the little down arrow, from Font Awesome 5 (chevron-down) */
+    content: "\f078";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    font-size: 13px;
+    color: #b9c2d0;
+    position: absolute;
+    left: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+#page-preview .accordion .card-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #494c4e;
+    text-align: left;
+}
+
+#page-preview .accordion .card-body {
+    background: #f7f7f7;
+    padding: 20px;
+}
+
+#page-preview .accordion .card-body > :last-child {
+    margin-bottom: 0;                       /* no extra gap under the last thing in the panel */
+}
