@@ -100,6 +100,7 @@ BOX_TYPE_CHOICES = [
     ("h4", "Heading 4"),
     ("ul", "Bulleted list"),
     ("ol", "Numbered list"),
+    ("video", "Video"),
 ]
 
 # --- THE CALLOUT CHOICES: (the short name we use in code, the words the instructor sees, the Font Awesome icon) ---
@@ -386,6 +387,14 @@ def box_to_plain_html(box):
     if kind == "paragraph":
         return f'<p>{format_inline(box["text"])}</p>'
 
+    if kind == "video":
+        info = find_video(box["text"])
+        if info is None:
+            return f'<p>{format_inline(box["text"])}</p>'     # no address left to embed; show the words
+        fields = get_video_fields(box)
+        return make_video_html(info, fields["title"], fields["length"], fields["language"], "#")
+                                        # the "#" is a placeholder; a later step numbers the links in page order
+    
     sys.exit(f"What on earth did you send me? We can't convert this {kind}")
                                         # because every type above has a return statement, if we make it here, we done screwed something up
 
@@ -443,6 +452,9 @@ def calculate_time_on_task(boxes):
         elif kind == "paragraph":
             total_words += len(box["text"].split())
 
+        elif kind == "video":
+            pass                         # a video isn't reading; its length gets counted separately
+        
         else:
             sys.exit(f"What have we done? Can't calculate time on task for {kind}")
                                         # because we should be matching the types we created...
@@ -614,6 +626,9 @@ def box_type_name(box):
             return "ol"
         return "ul"
 
+    if kind == "video":
+        return "video"
+    
     return "paragraph"                      # everything else is a paragraph
 
 # --- THE INSTRUCTOR PICKED A NEW TYPE: RETURN A NEW BOX WITH THE SAME WORDS, RELABELED ------------------------------
@@ -634,6 +649,11 @@ def change_box_type(box, type_name):
         new_box = make_paragraph(one_piece)
     elif type_name == "ul" or type_name == "ol":
         new_box = {"kind": "list", "ordered": type_name == "ol", "items": lines}
+    elif type_name == "video":
+        if find_video(one_piece) is None:
+            new_box = make_paragraph(one_piece)              # the video address is gone, so all it can be is a paragraph
+        else:
+            new_box = {"kind": "video", "text": one_piece}
     elif type_name.startswith("h"):
         new_box = {"kind": "heading", "level": int(type_name[1]), "text": one_piece}
     else:
@@ -644,6 +664,14 @@ def change_box_type(box, type_name):
     if box.get("video"):                     # a video box keeps its title, length and language when the type changes
         new_box["video"] = box["video"]
     return keep_valid_dressing(new_box)
+
+# --- WHICH TYPES CAN THIS BOX BE? EVERYTHING, EXCEPT "VIDEO" WHEN THERE'S NO VIDEO ADDRESS IN ITS WORDS ---
+
+def type_choices(box):
+
+    one_piece = " ".join(line.strip() for line in get_box_lines(box))
+    has_video = find_video(one_piece) is not None
+    return [(name, label) for name, label in BOX_TYPE_CHOICES if name != "video" or has_video]
 
 # --- THE INSTRUCTOR PICKED A CALLOUT (OR "NO CALLOUT"): RETURN A COPY OF THE BOX WITH THAT CALLOUT ---
 # --- an empty name means no callout; the box's own words and type are untouched ---
@@ -662,8 +690,6 @@ def dressing_choices(box):
     if box["kind"] == "heading":
         choices.append(("accordion-title", "Accordion title"))
     else:
-        if box["kind"] == "paragraph" and find_video(box["text"]) is not None:
-            choices.append(("video", "Video"))              # only a paragraph that holds a video address can be a video
         for name, label, icon_class in CALLOUT_CHOICES:
             choices.append((name, label))
     choices.append(("accordion-content", "Accordion content"))
