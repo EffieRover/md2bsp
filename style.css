@@ -427,7 +427,7 @@ textarea::placeholder {
 /* blue callout card in the preview (the real page gets its look from the Brightspace template) */
 .preview .card-graphic {
   background: #EDF8FE;
-  border: 4px solid #0D4471;
+  border: 3px solid #0D4471;
   border-radius: 8px;
   margin-bottom: 1rem;
   padding: 0;
