@@ -78,8 +78,6 @@ BOX_TYPE_CHOICES = [
     ("h2", "Heading 2"),
     ("h3", "Heading 3"),
     ("h4", "Heading 4"),
-    ("h5", "Heading 5"),
-    ("h6", "Heading 6"),
     ("ul", "Bulleted list"),
     ("ol", "Numbered list"),
 ]
@@ -230,6 +228,8 @@ def chunk_to_header(chunk):
 
     # It's a real heading only if a space follows the hashtags, and there are 6 hashtags or fewer.
     if without_hashes.startswith(" ") and level <= 6:
+        if level > 4:
+            level = 4                        # fuck h5 and h6. Really.
         return {"kind": "heading", "level": level, "text": without_hashes.strip()}
 
     # Otherwise, it only started with a hashtag (like "#BTS is trending"), so treat it as a paragraph.
