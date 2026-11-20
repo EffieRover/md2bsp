@@ -423,3 +423,36 @@ textarea::placeholder {
 .detail-times > div {
   flex: 1 1 140px;
 }
+
+/* blue callout card in the preview (the real page gets its look from the Brightspace template) */
+.preview .card-graphic {
+  background: #EDF8FE;
+  border: 1px solid #0D4471;
+  border-radius: 0;
+  margin-bottom: 1rem;
+  padding: 0;
+}
+
+.preview .card-graphic .card-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px 16px;
+}
+
+.preview .card-graphic .card-icon p {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.preview .card-graphic .card-text {
+  flex: 1;
+}
+
+.preview .card-graphic .card-text > :first-child {
+  margin-top: 0;
+}
+
+.preview .card-graphic .card-text > :last-child {
+  margin-bottom: 0;
+}
