@@ -6,6 +6,9 @@ document.getElementById("go-button").disabled = False   # Python is ready, so tu
 
 state = {"boxes": [], "screen": "paste"}        # the boxes we're working on; the dropdowns change these
 TYPE_LABELS = dict(BOX_TYPE_CHOICES)            # "h2" -> "Heading 2", so we can say it out loud
+CALLOUT_LABELS = {"": "No callout"}             # same idea for callouts: "tip" -> "Tip"
+for value, label, icon_class in CALLOUT_CHOICES:
+    CALLOUT_LABELS[value] = label
 
 # --- shortcut: hide or show one thing on the page, found by its id ---
 def set_hidden(element_id, is_hidden):
@@ -199,11 +202,23 @@ def type_changed(event):
     if picker.tagName != "SELECT":                           # the editing box fires "change" too; that's not ours
         return
     number = int(picker.getAttribute("data-box"))            # which box it belongs to
-    new_box = change_box_type(state["boxes"][number - 1], picker.value)
-    state["boxes"][number - 1] = new_box                     # swap the old box for the relabeled one
-    render_issues(state["boxes"])                            # a type change can change what needs fixing
+    callout_picker = document.getElementById(f"callout-{number}")
+
+    if picker.id.startswith("callout-"):                     # the callout dropdown changed: dress the box up (or not)
+        new_box = set_box_callout(state["boxes"][number - 1], picker.value)
+        message = f"Box {number} callout: {CALLOUT_LABELS[picker.value]}."
+    else:                                                    # the type dropdown changed: relabel the box
+        new_box = change_box_type(state["boxes"][number - 1], picker.value)
+        if new_box["kind"] == "heading":                     # headings can't be callouts, so clear it and hide the dropdown
+            new_box = set_box_callout(new_box, "")
+            callout_picker.value = ""
+        callout_picker.hidden = new_box["kind"] == "heading"
+        message = f"Box {number} is now: {TYPE_LABELS[picker.value]}."
+
+    state["boxes"][number - 1] = new_box                     # swap the old box for the new one
+    render_issues(state["boxes"])                            # a change can change what needs fixing
     document.getElementById(f"preview-{number}").innerHTML = box_to_html(new_box)
-    document.getElementById("result").innerText = f"Box {number} is now: {TYPE_LABELS[picker.value]}."
+    document.getElementById("result").innerText = message
 
 # --- flip one box between "looking at the preview" and "typing in the text box" ---
 def set_editing_look(number, is_editing):
@@ -212,6 +227,7 @@ def set_editing_look(number, is_editing):
         document.getElementById(f"hint-{number}").hidden = True
     document.getElementById(f"preview-{number}").hidden = is_editing
     document.getElementById(f"type-{number}").disabled = is_editing     # no relabeling while typing
+    document.getElementById(f"callout-{number}").disabled = is_editing  # and no callout changes while typing
     button = document.getElementById(f"edit-{number}")
     if is_editing:
         button.innerHTML = '<span class="fas fa-fw fa-check" aria-hidden="true"></span>'
