@@ -760,6 +760,88 @@ def mark_content_after_title(boxes, title_index):
     boxes[next_index] = set_box_callout(boxes[next_index], "accordion-content")
     return True
 
+# --- VIDEOS: ONE PASTED YOUTUBE OR VIMEO ADDRESS GIVES US BOTH THE EMBED ADDRESS AND THE DIRECT LINK ---
+
+VIDEO_DEFAULT_LANGUAGE = "English, with subtitles"
+
+def is_video_id(text):
+
+    return text != "" and all(character.isalnum() or character in "-_" for character in text)
+
+def parse_video_url(url):
+
+    parts = urlparse(url)
+    host = (parts.hostname or "").lower()
+    for prefix in ("www.", "m."):
+        if host.startswith(prefix):
+            host = host[len(prefix):]
+    bits = [bit for bit in parts.path.split("/") if bit]
+    query = {}
+    for pair in parts.query.split("&"):
+        if "=" in pair:
+            name, value = pair.split("=", 1)
+            query[name] = value
+
+    video_id = ""
+    if host == "youtu.be" and bits:
+        video_id = bits[0]
+    elif host in ("youtube.com", "youtube-nocookie.com"):
+        if bits[:1] == ["watch"]:
+            video_id = query.get("v", "")
+        elif bits[:1] in (["embed"], ["shorts"], ["live"], ["v"]) and len(bits) > 1:
+            video_id = bits[1]
+    if is_video_id(video_id):
+        return {"embed": f"https://www.youtube.com/embed/{video_id}", "direct": f"https://youtu.be/{video_id}"}
+
+    raw_host = (parts.hostname or "").lower()
+    if raw_host.endswith(".panopto.com") and parts.path.lower().endswith(("/panopto/pages/viewer.aspx", "/panopto/pages/embed.aspx")):
+        if is_video_id(query.get("id", "")):    # every school has its own Panopto address, so we go by the shape, not the name
+            return {"embed": f"https://{raw_host}/Panopto/Pages/Embed.aspx?id={query['id']}&v=1",
+                    "direct": f"https://{raw_host}/Panopto/Pages/Viewer.aspx?id={query['id']}"}
+        return None
+        
+    if host == "vimeo.com" and bits and bits[0].isdigit():
+        video_id = bits[0]
+        secret = bits[1] if len(bits) > 1 and is_video_id(bits[1]) else ""     # unlisted videos carry a secret code
+    elif host == "player.vimeo.com" and len(bits) > 1 and bits[0] == "video" and bits[1].isdigit():
+        video_id = bits[1]
+        secret = query.get("h", "") if is_video_id(query.get("h", "")) else ""
+    else:
+        return None
+    embed = f"https://player.vimeo.com/video/{video_id}" + (f"?h={secret}" if secret else "")
+    direct = f"https://vimeo.com/{video_id}" + (f"/{secret}" if secret else "")
+    return {"embed": embed, "direct": direct}
+
+def find_video(text):
+
+    for link_text, url in find_links(text):     # a pasted address has already become a markdown link
+        info = parse_video_url(url)
+        if info is not None:
+            return info                         # the first video address in the box wins
+    return None
+
+def make_video_html(info, title, length, language, number):
+
+    title = title.strip()
+    iframe_title = escape(title if title else "Video", quote=True)
+    link_text = escape(title if title else "Watch this video", quote=False)
+    details = []
+    if length.strip():
+        details.append(f"Length: {escape(length.strip(), quote=False)}")
+    details.append(f"Language: {escape(language.strip() if language.strip() else VIDEO_DEFAULT_LANGUAGE, quote=False)}")
+    details_line = " | ".join(details)
+    return (
+        '<div class="video-wrapper">\n'
+        f'<div class="embed-responsive embed-responsive-16by9"><iframe class="embed-responsive-item" src="{escape(info["embed"])}" title="{iframe_title}" allowfullscreen="allowfullscreen"></iframe></div>\n'
+        '<div class="video-text">\n'
+        f'<p>Direct Link: <a href="{escape(info["direct"])}" class="new-window" target="_blank" id="new-window{number}" '
+        'data-original-title="opens in new window/tab" data-toggle="tooltip" rel="noopener">'
+        f'{link_text}<span class="sr-only">(this link opens in a new window/tab)</span></a></p>\n'
+        f'<p>{details_line}</p>\n'
+        '</div>\n'
+        '</div>'
+    )
+
 # --- ALL THE BOXES AS ONE LONG STRING OF HTML (NO TIME CARD YET) --------------------------------------------------------
 # --- the web page and the command line both start from here ---
 
