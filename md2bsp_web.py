@@ -42,6 +42,7 @@ import os                                   # allows us to ask for device folder
 import sys                                  # allows us to stop the program with a message
 from html import escape                     # make text safe to put inside HTML / sanitize it
 import math                                 # cuz we be calculatin' reading time
+from datetime import date                   # short date formats ...
 from urllib.parse import urlparse           # chops a web address into its parts (host, path, etc)
 
 # --- SETTINGS --------------------------------------------------------------------------------------------------------
@@ -469,6 +470,28 @@ def make_page_leader(minutes, details=None):
 
     return wrap_leader_rows(rows)
 
+# --- THE LAST LINE OF THE PAGE: WEEK / UNIT / MODULE AND NUMBER (IF GIVEN), THEN WHEN IT WAS PUBLISHED ---
+# --- no number, no Week line; the page still says when it was published ---
+
+def make_page_end(details=None):
+
+    if details is None:                     # the command-line run has no web page to ask, so it passes nothing
+        details = {}
+
+    today = date.today()
+    published = f"{today.month}/{today.day}/{today.year}"     # short date, no leading zeros: 11/9/2026
+
+    lines = []
+    unit_number = one_line(details.get("unit_number", ""))
+    if unit_number.isdigit() and int(unit_number) > 0:        # isdigit keeps out blanks, minus signs, and "abc"
+        unit_type = one_line(details.get("unit_type", ""))
+        if unit_type not in ("Week", "Unit", "Module"):       # anything else falls back to Week
+            unit_type = "Week"
+        lines.append(f"{unit_type} {int(unit_number)}")
+    lines.append(f"Last published: {published}")
+
+    return '<p style="font-size: 16px;">' + "<br>".join(lines) + "</p>"
+    
 # --- IT PUTS THE HTML IN THE TEMPLATE OR ELSE IT GETS THE WONKY FILE AGAIN -------------------------------------------
 # --- takes the template text, boxes, content, works out the title, banner, leader ---
 # --- note that some of this is hardcoded right now but will be added as options later ---
@@ -567,7 +590,7 @@ def boxes_to_content(boxes):
 
 def make_preview_html(boxes, details=None):
 
-    content = boxes_to_content(boxes)
+    content = boxes_to_content(boxes) + "\n" + make_page_end(details)
     page_leader = make_page_leader(calculate_time_on_task(boxes), details)
     return content.replace("</h1>", "</h1>\n" + page_leader, 1)
 
@@ -575,7 +598,7 @@ def make_preview_html(boxes, details=None):
 
 def make_finished_page(template, boxes, details=None):
 
-    content = boxes_to_content(boxes)
+    content = boxes_to_content(boxes) + "\n" + make_page_end(details)
     page_leader = make_page_leader(calculate_time_on_task(boxes), details)
     return build_page(template, boxes, content, page_leader)
 
