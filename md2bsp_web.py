@@ -82,6 +82,9 @@ JUNK_TO_PLAIN = {                           # get rid of Microsoft "smart" bulls
     "\u2013": "-",                          # en dash, as in 10–15
     "\u2014": " - ",                        # em dash; spaces added so the words on either side don't mash together
     "\u00a0": " ",                          # non-breaking space, a classic Word landmine
+    "&nbsp;": " ",                          # the same space, spelled out as text (shows up in pasted web and markdown)
+    "&#160;": " ",                          # ...and the number versions of it
+    "&#xa0;": " ",    
     "\u200b": "",                           # zero-width space, invisible and useless
     "\ufeff": "",                           # byte order mark, sometimes shows up at the start of a file
 }
