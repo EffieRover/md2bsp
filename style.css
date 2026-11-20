@@ -479,3 +479,11 @@ aside.card:focus-visible {
     overflow-y: visible;
   }
 }
+
+/* the stand-in banner at the top of the preview */
+.preview-banner {
+  display: block;
+  width: 100%;
+  height: auto;               /* keeps the picture's shape as the card gets wider or narrower */
+  margin-bottom: 16px;
+}
