@@ -84,6 +84,20 @@ BOX_TYPE_CHOICES = [
     ("ol", "Numbered list"),
 ]
 
+# --- THE CALLOUT CHOICES: (the short name we use in code, the words the instructor sees, the Font Awesome icon) ---
+# --- a box with no callout simply has no "callout" key, or an empty one ---
+
+CALLOUT_CHOICES = [
+    ("question", "Question", "fa-question-circle"),
+    ("key", "Key idea", "fa-exclamation-circle"),
+    ("tip", "Tip", "fa-lightbulb"),
+    ("steps", "Steps", "fa-project-diagram"),
+    ("documents", "Documents", "fa-copy"),
+    ("quote", "Quote", "fa-quote-left"),
+    ("plan", "Plan", "fa-map"),
+    ("reminder", "Reminder", "fa-bell"),
+]
+
 # --- READING THE INPUT FILE ------------------------------------------------------------------------------------------
 # --- Read a text file, file_name, and return everything in it as one piece of text ---
 # --- with open ... opens the file and closes it when we're done; utf-8 tells py how to read special characters ---
@@ -321,7 +335,7 @@ def format_inline(text):
 # --- OKAY, WE PARSED IT INTO BOXES; PHASE 2, NOW TURN THE BOXES INTO HTML --------------------------------------------
 # --- takes a box and returns a piece of matching HTML ---
 
-def box_to_html(box):
+def box_to_plain_html(box):
 
     kind = box["kind"]                  # what kind of critter do we have here?
 
@@ -354,6 +368,38 @@ def box_to_html(box):
 
     sys.exit(f"What on earth did you send me? We can't convert this {kind}")
                                         # because every type above has a return statement, if we make it here, we done screwed something up
+
+# --- THE BLUE CALLOUT CARD: AN ICON ON THE LEFT, WHATEVER THE BOX SAYS ON THE RIGHT ---
+# --- the icon is decoration, so screen readers skip it ---
+
+def wrap_callout(inner_html, icon_class):
+
+    return (
+        '<!-- callout begin -->\n'
+        '<div class="card card-graphic">\n'
+        '<div class="card-body">\n'
+        '<div class="card-icon">\n'
+        f'<p><span class="fas {icon_class}" aria-hidden="true"></span></p>\n'
+        '</div>\n'
+        '<div class="card-text">\n'
+        f'{inner_html}\n'
+        '</div>\n'
+        '</div>\n'
+        '</div>\n'
+        '<!-- callout end -->'
+    )
+
+# --- A BOX AS HTML: ITS PLAIN HTML, WRAPPED IN A CALLOUT IF IT HAS ONE (HEADINGS NEVER DO) ---
+
+def box_to_html(box):
+
+    html = box_to_plain_html(box)
+    if box["kind"] == "heading":
+        return html
+    for name, label, icon_class in CALLOUT_CHOICES:
+        if box.get("callout") == name:
+            return wrap_callout(html, icon_class)
+    return html
 
 # --- SO NOW CALCULATE TIME ON TASK FOR THE POOR STUDENT --------------------------------------------------------------
 # --- adds up words not in the title and divides by reading speed ---
