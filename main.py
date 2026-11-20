@@ -14,12 +14,13 @@ def set_hidden(element_id, is_hidden):
 # --- THE THREE SCREENS: WHAT EACH ONE SHOWS, WHICH STEP LIGHTS UP, WHERE FOCUS GOES, AND WHAT THE BACK BUTTON SAYS ---
 # --- every piece of the page that comes and goes is listed once in ALL_PARTS; a screen only lists what it shows ---
 
-ALL_PARTS = [
-    "paste-screen", "boxes", "page-preview",
-    "go-button", "clear-button", "preview-button", "download-button", "back-button",
-    "help-paste", "help-organize", "help-preview", "issues",
-]
-STEP_IDS = ["step-paste", "step-organize", "step-preview"]
+ALL_PARTS = ["paste-screen", "boxes", "page-preview", "page-details",
+             "go-button", "clear-button", "finish-button", "preview-button",
+             "download-button", "back-button",
+             "help-paste", "help-organize", "help-finish", "help-preview",
+             "issues"]
+
+STEP_IDS = ["step-paste", "step-organize", "step-finish", "step-preview"]
 
 SCREENS = {
     "paste": {
@@ -27,14 +28,21 @@ SCREENS = {
         "step": "step-paste", "focus": "markdown-input", "back": "",
     },
     "organize": {
-        "show": ["boxes", "preview-button", "back-button", "help-organize", "issues"],
+        "show": ["boxes", "finish-button", "back-button", "help-organize", "issues"],
         "step": "step-organize", "focus": "boxes", "back": "Back to 1: Paste",
+    },
+    "finish": {
+        "show": ["page-details", "preview-button", "back-button", "help-finish", "issues"],
+        "step": "step-finish", "focus": "page-details", "back": "Back to 2: Organize",
     },
     "preview": {
         "show": ["page-preview", "download-button", "back-button", "help-preview", "issues"],
-        "step": "step-preview", "focus": "page-preview", "back": "Back to 2: Organize",
+        "step": "step-preview", "focus": "page-preview", "back": "Back to 3: Finishing Touches",
     },
 }
+
+# --- page button lists ... where do they return to ---
+BACK_TO = {"organize": "paste", "finish": "organize", "preview": "finish"}
 
 # --- switch the page to one of the screens above ---
 def show_screen(name):
@@ -226,6 +234,12 @@ def finish_all_editing():
         if not document.getElementById(f"editor-{number}").hidden:
             finish_editing(number)
 
+@when("click", "#finish-button")
+def go_finish(event):
+    finish_all_editing()
+    render_issues(state["boxes"])
+    show_screen("finish")
+    
 @when("click", "#preview-button")
 def show_preview(event):
     finish_all_editing()                        # an open edit box counts as a finished one
@@ -254,8 +268,4 @@ def download_page(event):
 
 @when("click", "#back-button")
 def go_back(event):
-    document.getElementById("result").innerText = ""
-    if state["screen"] == "preview":
-        show_screen("organize")
-    else:
-        show_screen("paste")
+    show_screen(BACK_TO[state["screen"]])
