@@ -305,7 +305,8 @@ def go_finish(event):
 def show_preview(event):
     finish_all_editing()                        # an open edit box counts as a finished one
     banner = '<img class="preview-banner" src="./preview_banner.jpg" alt="">'    # a stand-in for the real banner, preview only
-    document.getElementById("page-preview").innerHTML = banner + make_preview_html(state["boxes"], read_details())
+    content = '<div class="preview-content">' + make_preview_html(state["boxes"], read_details()) + '</div>'    # the narrower column the template puts content in
+    document.getElementById("page-preview").innerHTML = banner + content
     problems = find_issues(state["boxes"])
     document.getElementById("result").innerText = f"Preview ready. Things to fix: {len(problems)}."
     show_screen("preview")
