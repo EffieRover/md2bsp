@@ -106,10 +106,10 @@ CALLOUT_CHOICES = [
     ("question", "Question", "fa-question-circle"),
     ("key", "Key idea", "fa-exclamation-circle"),
     ("tip", "Tip", "fa-lightbulb"),
-    ("steps", "Steps", "fa-project-diagram"),
-    ("documents", "Documents", "fa-copy"),
     ("quote", "Quote", "fa-quote-left"),
+    ("steps", "Steps", "fa-project-diagram"),
     ("plan", "Plan", "fa-map"),
+    ("documents", "Documents", "fa-copy"),
     ("reminder", "Reminder", "fa-bell"),
 ]
 
