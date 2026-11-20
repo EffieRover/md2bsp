@@ -40,28 +40,36 @@
             <h2>Page details</h2>
             <p class="field-note">Fill in only what applies. Empty fields won't show up on the page.</p>
 
+            <div class="detail-times">
+              <div>
+                <label for="detail-external">External reading (min)</label>
+                <input type="number" id="detail-external" class="detail-field" min="0">
+              </div>
+              <div>
+                <label for="detail-video">Video (min)</label>
+                <input type="number" id="detail-video" class="detail-field" min="0">
+              </div>
+              <div>
+                <label for="detail-activity">Activity (min)</label>
+                <input type="number" id="detail-activity" class="detail-field" min="0">
+              </div>
+            </div>
+
             <label for="detail-before">Before you start</label>
-            <textarea id="detail-before" class="detail-field" rows="2"></textarea>
+            <input type="text" id="detail-before" class="detail-field">
 
             <label for="detail-materials">Materials needed</label>
-            <textarea id="detail-materials" class="detail-field" rows="2"></textarea>
+            <input type="text" id="detail-materials" class="detail-field">
 
             <label for="detail-terms">Key terms</label>
-            <textarea id="detail-terms" class="detail-field" rows="3"></textarea>
-            <p class="field-note">One per line.</p>
+            <input type="text" id="detail-terms" class="detail-field">
 
             <label for="detail-questions">Guiding questions</label>
-            <textarea id="detail-questions" class="detail-field" rows="3"></textarea>
+            <textarea id="detail-questions" class="detail-field" rows="4"></textarea>
             <p class="field-note">One per line. Most pages need Key terms or Guiding questions, not both.</p>
 
             <label for="detail-working">Working toward</label>
-            <textarea id="detail-working" class="detail-field" rows="2"></textarea>
-
-            <label for="detail-external">External reading (minutes)</label>
-            <input type="number" id="detail-external" class="detail-field" min="0">
-
-            <label for="detail-video">Video (minutes)</label>
-            <input type="number" id="detail-video" class="detail-field" min="0">
+            <textarea id="detail-working" class="detail-field" rows="3"></textarea>
           </section>
 
           <section id="page-preview" class="card preview" tabindex="-1" hidden></section>
