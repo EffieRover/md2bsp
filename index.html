@@ -70,6 +70,23 @@
 
             <label for="detail-working">Working toward</label>
             <textarea id="detail-working" class="detail-field" rows="3"></textarea>
+            
+            <div class="detail-times">
+              <div>
+                <label for="detail-unit-type">This page is in a</label>
+                <select id="detail-unit-type" class="detail-field">
+                  <option>Week</option>
+                  <option>Unit</option>
+                  <option>Module</option>
+                </select>
+              </div>
+              <div>
+                <label for="detail-unit-number">Number</label>
+                <input type="number" id="detail-unit-number" class="detail-field" min="1">
+              </div>
+            </div>
+            <p class="field-note">Goes at the bottom of the page. Leave the number blank to skip it. "Last published" is added for you, with today's date.</p>
+     
           </section>
 
           <section id="page-preview" class="card preview" tabindex="-1" hidden></section>
