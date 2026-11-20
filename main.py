@@ -241,10 +241,10 @@ def type_changed(event):
 
     state["boxes"][number - 1] = new_box                     # swap the old box for the new one
     if picker.id.startswith("callout-") and picker.value == "accordion-title":    # a title was just chosen
-    if mark_content_after_title(state["boxes"], number - 1):                  # the box under it was undressed
-        next_number = number + 1
-        document.getElementById(f"callout-{next_number}").value = "accordion-content"   # show it in that box's dropdown
-        message += f" Box {next_number} was marked as Accordion content."
+        if mark_content_after_title(state["boxes"], number - 1):                  # the box under it was undressed
+            next_number = number + 1
+            document.getElementById(f"callout-{next_number}").value = "accordion-content"   # show it in that box's dropdown
+            message += f" Box {next_number} was marked as Accordion content."
     render_issues(state["boxes"])                            # a change can change what needs fixing
     document.getElementById(f"preview-{number}").innerHTML = box_to_html(new_box)
     document.getElementById("result").innerText = message
