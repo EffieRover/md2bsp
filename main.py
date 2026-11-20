@@ -1,11 +1,12 @@
 from pyscript import document, when, window
 from md2bsp_web import (
+    BOX_TYPE_CHOICES,
+    CALLOUT_CHOICES,
+    TEMPLATE_FILE,
     text_to_boxes,
     box_to_html,
     box_type_name,
     change_box_type,
-    BOX_TYPE_CHOICES,
-    CALLOUT_CHOICES,
     set_box_callout,
     dressing_choices,
     find_issues,
@@ -15,10 +16,10 @@ from md2bsp_web import (
     make_finished_page,
     make_file_name,
     read_file,
-    TEMPLATE_FILE,
     mark_content_after_title,
     type_choices,
     get_video_fields,
+    set_box_video,
 )
 
 document.getElementById("status").innerText = "Python is ready."
@@ -260,11 +261,36 @@ def chunk_it(event):
     document.getElementById("result").innerText = f"Found {len(boxes)} boxes. Things to fix: {problems}."
     show_screen("organize")
 
+# --- typing in a video field: save it into the box right away (the preview waits until you leave the field, so the video doesn't reload on every keystroke) ---
+@when("input", "#boxes")
+def video_field_typed(event):
+    field = event.target
+    if not field.classList.contains("video-field"):          # not one of ours
+        return
+    number = int(field.getAttribute("data-box"))
+    state["boxes"][number - 1] = set_box_video(
+        state["boxes"][number - 1],
+        document.getElementById(f"video-title-{number}").value,
+        document.getElementById(f"video-length-{number}").value,
+        document.getElementById(f"video-language-{number}").value,
+    )
+
+# --- leaving a video field: redraw that box's preview and recheck Needed Repairs (type_changed hands "change" events here) ---
+def video_field_changed(event):
+    field = event.target
+    if not field.classList.contains("video-field"):          # the editing box fires "change" too; not ours
+        return
+    number = int(field.getAttribute("data-box"))
+    document.getElementById(f"preview-{number}").innerHTML = box_to_html(state["boxes"][number - 1])
+    render_issues(state["boxes"])
+    document.getElementById("result").innerText = f"Box {number} video details updated."
+
 # --- the instructor changed a dropdown: relabel that box and redraw its preview ---
 @when("change", "#boxes")
 def type_changed(event):
     picker = event.target                                    # the dropdown that was just changed
-    if picker.tagName != "SELECT":                           # the editing box fires "change" too; that's not ours
+    if picker.tagName != "SELECT":                           # not a dropdown: maybe a video field, maybe the editing box
+        video_field_changed(event)
         return
     number = int(picker.getAttribute("data-box"))            # which box it belongs to
     callout_picker = document.getElementById(f"callout-{number}")
