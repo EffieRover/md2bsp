@@ -103,6 +103,35 @@ def show_screen(name):
     document.getElementById(screen["focus"]).focus()    # the button that had focus just vanished, so hand focus to the new screen
     window.scrollTo(0, 0)                       # focusing a tall element scrolls the page; put it back at the top
 
+# --- the three little fields under a video box: title, length, language; they stay hidden unless the box is a video ---
+def make_video_fields(number):
+    wrapper = document.createElement("div")
+    wrapper.id = f"video-fields-{number}"
+    wrapper.className = "video-fields"
+    wrapper.hidden = True
+    for name, label_text in [("title", "Video title"), ("length", "Length (mm:ss)"), ("language", "Language")]:
+        piece = document.createElement("div")
+        piece.className = f"video-field-{name}"
+        label = document.createElement("label")
+        label.setAttribute("for", f"video-{name}-{number}")
+        label.innerText = label_text
+        field = document.createElement("input")
+        field.setAttribute("type", "text")
+        field.id = f"video-{name}-{number}"
+        field.className = "video-field"
+        field.setAttribute("data-box", str(number))
+        piece.appendChild(label)
+        piece.appendChild(field)
+        wrapper.appendChild(piece)
+    return wrapper
+
+# --- show the fields only if this box is a video, and put the box's saved title, length and language in them ---
+def fill_video_fields(number, box):
+    fields = get_video_fields(box)
+    document.getElementById(f"video-fields-{number}").hidden = box["kind"] != "video"
+    for name in ("title", "length", "language"):
+        document.getElementById(f"video-{name}-{number}").value = fields[name]
+
 # --- fill a box's type dropdown with the types that box can be (Video only if it holds a video address) and pick the current one ---
 def fill_type_picker(select, box):
     select.innerHTML = ""                       # empty out whatever was there
@@ -182,6 +211,8 @@ def make_box_frame(number, box):
     toolbar.appendChild(edit_button)
     frame.appendChild(toolbar)
     frame.appendChild(preview)
+    frame.appendChild(make_video_fields(number))        # hidden unless this box is a video
+    fill_video_fields(number, box)
     frame.appendChild(hint)
     frame.appendChild(editor)
     return frame
@@ -246,6 +277,7 @@ def type_changed(event):
         message = f"Box {number} is now: {TYPE_LABELS[picker.value]}."
 
     state["boxes"][number - 1] = new_box                     # swap the old box for the new one
+    fill_video_fields(number, new_box)                       # a box that just became a video (or stopped being one) shows or hides its fields
     if picker.id.startswith("callout-") and picker.value == "accordion-title":    # a title was just chosen
         if mark_content_after_title(state["boxes"], number - 1):                  # the box under it was undressed
             next_number = number + 1
@@ -296,6 +328,7 @@ def finish_editing(number):
     state["boxes"][number - 1] = new_box
     fill_type_picker(document.getElementById(f"type-{number}"), new_box)          # the words may have gained or lost a video address
     fill_dressing_picker(document.getElementById(f"callout-{number}"), new_box)   # and the box may no longer wear what it wore
+    fill_video_fields(number, new_box)
     document.getElementById(f"preview-{number}").innerHTML = box_to_html(new_box)
     set_editing_look(number, False)
     problems = render_issues(state["boxes"])                 # the fix might have cleared (or caused) a problem
