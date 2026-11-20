@@ -593,13 +593,64 @@ aside.card:focus-visible {
 }
 
 .video-fields label {
+    margin: 0;                              /* the gap under the label was the app's own label margin */
     font-weight: 700;
     font-size: 0.95rem;
+    line-height: 1.2;
 }
 
 .video-fields input {
+    margin: 0;
     width: 100%;
     box-sizing: border-box;
     font-size: 1rem;
     padding: 0.4em 0.5em;
+}
+
+/* VIDEOS IN THE PREVIEW: THE APP DOESN'T HAVE BOOTSTRAP'S VIDEO RULES OR BRIGHTSPACE'S LINK ICON, SO WE IMITATE THEM */
+.preview .video-wrapper {
+    max-width: 640px;
+}
+
+.preview .embed-responsive {                /* a 16:9 box that scales with the width, like Bootstrap's */
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+}
+
+.preview .embed-responsive::before {
+    display: block;
+    content: "";
+}
+
+.preview .embed-responsive-16by9::before {
+    padding-top: 56.25%;
+}
+
+.preview .embed-responsive-item {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.preview .video-text {
+    margin-top: 0.5em;
+}
+
+.preview .video-text p {
+    margin: 0 0 0.25em;
+}
+
+.preview a.new-window::after {              /* the little "opens in a new window" arrow, from Font Awesome 5 (external-link-alt) */
+    content: "\f35d";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    font-size: 0.75em;
+    margin-left: 0.35em;
 }
