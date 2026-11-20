@@ -888,7 +888,7 @@ def find_links(text):
 
 def find_issues(boxes):
 
-    issues = []
+    issues = []                                     # pairs of (box number, sentence) so we can sort them at the end
     for number, box in enumerate(boxes, start=1):   # people count from 1, not 0
         if box["kind"] == "paragraph":
             texts = [box["text"]]
@@ -900,8 +900,30 @@ def find_issues(boxes):
         for text in texts:
             for link_text, url in find_links(text):
                 if link_text_is_weak(link_text, url):
-                    issues.append(f"Box {number}: link ({url}) is missing descriptive text.")
-    return issues
+                    issues.append((number, f"Box {number}: link ({url}) is missing descriptive text."))
+
+    for start, end in find_accordion_runs(boxes):   # accordions: every title needs content, every content needs a title
+        for index in range(start, end):
+            number = index + 1
+            dressing = boxes[index].get("dressing", "")
+            if dressing == "accordion-content" and index == start:
+                issues.append((number, f"Box {number}: accordion content has no accordion title above it. "
+                                       "Mark a heading above it as Accordion title, or set this box back to None."))
+            if dressing == "accordion-title":
+                if index + 1 < end and boxes[index + 1].get("dressing") == "accordion-title":
+                    issues.append((number, f"Box {number}: accordion title has no content before the next title. "
+                                           "Mark a box under it as Accordion content."))
+                elif index + 1 == end:
+                    next_dressing = boxes[end].get("dressing", "") if end < len(boxes) else ""
+                    if next_dressing != "":
+                        issues.append((number, f"Box {number}: accordion title is followed by a callout, which can't be accordion content. "
+                                               "Move the callout, or set it back to None."))
+                    else:
+                        issues.append((number, f"Box {number}: accordion title has no content under it. "
+                                               "Mark the box below it as Accordion content, or set this one back to None."))
+
+    issues.sort(key=lambda pair: pair[0])           # sort() keeps ties in the order we added them
+    return [sentence for number, sentence in issues]
 
 # --- PHASE ONE AS ONE CALL: RAW MARKDOWN IN, LIST OF BOXES OUT -------------------------------------------------------
 # --- cleans the text, fixes bare urls, splits it into chunks, and puts each chunk in a labeled box ---
