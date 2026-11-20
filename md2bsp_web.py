@@ -638,7 +638,7 @@ def change_box_type(box, type_name):
     new_box["lines"] = lines
     if box.get("dressing"):                  # a dressing piece stays a dressing piece when the box changes type
         new_box["dressing"] = box["dressing"]
-    return new_box
+    return keep_valid_dressing(new_box)
 
 # --- THE INSTRUCTOR PICKED A CALLOUT (OR "NO CALLOUT"): RETURN A COPY OF THE BOX WITH THAT CALLOUT ---
 # --- an empty name means no callout; the box's own words and type are untouched ---
@@ -648,6 +648,26 @@ def set_box_callout(box, callout_name):
     new_box = dict(box)                     # a copy, so the old box is left alone
     new_box["dressing"] = callout_name
     return new_box
+
+# --- WHICH DRESSINGS CAN THIS BOX WEAR? HEADINGS: NONE, ACCORDION TITLE, ACCORDION CONTENT; EVERYTHING ELSE: NONE, THE CALLOUTS, ACCORDION CONTENT ---
+
+def dressing_choices(box):
+
+    choices = [("", "None")]
+    if box["kind"] == "heading":
+        choices.append(("accordion-title", "Accordion title"))
+    else:
+        for name, label, icon_class in CALLOUT_CHOICES:
+            choices.append((name, label))
+    choices.append(("accordion-content", "Accordion content"))
+    return choices
+
+def keep_valid_dressing(box):
+
+    valid_names = [name for name, label in dressing_choices(box)]
+    if box.get("dressing", "") not in valid_names:
+        return set_box_callout(box, "")
+    return box
     
 # --- ALL THE BOXES AS ONE LONG STRING OF HTML (NO TIME CARD YET) --------------------------------------------------------
 # --- the web page and the command line both start from here ---
