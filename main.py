@@ -1,3 +1,5 @@
+import asyncio
+from pyodide.http import pyfetch
 from pyscript import document, when, window
 from md2bsp_web import (
     BOX_TYPE_CHOICES,
@@ -7,11 +9,11 @@ from md2bsp_web import (
     box_to_html,
     box_type_name,
     change_box_type,
+    box_to_editor_text,
+    edit_box_text,
     set_box_callout,
     dressing_choices,
     find_issues,
-    box_to_editor_text,
-    edit_box_text,
     make_preview_html,
     make_finished_page,
     make_file_name,
@@ -20,6 +22,8 @@ from md2bsp_web import (
     type_choices,
     get_video_fields,
     set_box_video,
+    find_video,
+    video_title_lookup_url,
 )
 
 document.getElementById("status").innerText = "Python is ready."
@@ -261,6 +265,31 @@ def chunk_it(event):
     document.getElementById("result").innerText = f"Found {len(boxes)} boxes. Things to fix: {problems}."
     show_screen("organize")
 
+# --- ask the video site for the title (YouTube and Vimeo only); fill it in if the title box is still empty, say so if the lookup fails ---
+async def fetch_video_title(number):
+    box = state["boxes"][number - 1]
+    info = find_video(box["text"])
+    lookup_url = video_title_lookup_url(info) if info is not None else None
+    if lookup_url is None:                                   # Panopto, or nothing to look up
+        return
+    try:
+        response = await pyfetch(lookup_url)
+        data = await response.json()
+        title = data["title"]
+    except Exception:                                        # blocked by the browser, no internet, video not found...
+        document.getElementById("result").innerText = f"Box {number}: couldn't get the title from the video site. Please type it in."
+        return
+    box = state["boxes"][number - 1]                         # the box may have changed while we waited; look again
+    fields = get_video_fields(box)
+    if box["kind"] != "video" or fields["title"] != "":      # no longer a video, or the instructor already typed one
+        return
+    new_box = set_box_video(box, title, fields["length"], fields["language"])
+    state["boxes"][number - 1] = new_box
+    fill_video_fields(number, new_box)
+    document.getElementById(f"preview-{number}").innerHTML = box_to_html(new_box)
+    render_issues(state["boxes"])
+    document.getElementById("result").innerText = f"Box {number}: video title filled in. Check that it's right."
+
 # --- typing in a video field: save it into the box right away (the preview waits until you leave the field, so the video doesn't reload on every keystroke) ---
 @when("input", "#boxes")
 def video_field_typed(event):
@@ -305,6 +334,9 @@ def type_changed(event):
 
     state["boxes"][number - 1] = new_box                     # swap the old box for the new one
     fill_video_fields(number, new_box)                       # a box that just became a video (or stopped being one) shows or hides its fields
+    if not picker.id.startswith("callout-") and picker.value == "video":      # the type dropdown just chose Video
+        if get_video_fields(new_box)["title"] == "":
+            asyncio.ensure_future(fetch_video_title(number))                  # runs in the background; the page keeps working
     if picker.id.startswith("callout-") and picker.value == "accordion-title":    # a title was just chosen
         if mark_content_after_title(state["boxes"], number - 1):                  # the box under it was undressed
             next_number = number + 1
