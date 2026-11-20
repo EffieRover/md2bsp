@@ -170,7 +170,14 @@ def render_issues(boxes):
         issue_list.appendChild(item)
     for sentence in issues:
         item = document.createElement("li")
-        item.innerText = sentence               # innerText, because the url came from pasted text
+        box_label, colon, rest = sentence.partition(": ")      # "Box 12" and everything after the first colon
+        if colon == "":                                        # no "Box N:" in front; just show the sentence
+            item.innerText = sentence
+        else:
+            label = document.createElement("strong")           # the box number, bold so each repair is easy to spot
+            label.innerText = box_label + ":"
+            item.appendChild(label)
+            item.appendChild(document.createTextNode(" " + rest))    # a text node, so pasted urls stay plain text
         issue_list.appendChild(item)
     return len(issues)
     
