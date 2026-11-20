@@ -414,7 +414,7 @@ def box_to_html(box):
     if box["kind"] == "heading":
         return html
     for name, label, icon_class in CALLOUT_CHOICES:
-        if box.get("callout") == name:
+        if box.get("dressing") == name:
             return wrap_callout(html, icon_class)
     return html
 
@@ -636,8 +636,8 @@ def change_box_type(box, type_name):
     else:
         return box
     new_box["lines"] = lines
-    if box.get("callout"):                  # a callout stays a callout when the box changes type
-        new_box["callout"] = box["callout"]
+    if box.get("dressing"):                  # a dressing piece stays a dressing piece when the box changes type
+        new_box["dressing"] = box["dressing"]
     return new_box
 
 # --- THE INSTRUCTOR PICKED A CALLOUT (OR "NO CALLOUT"): RETURN A COPY OF THE BOX WITH THAT CALLOUT ---
@@ -646,7 +646,7 @@ def change_box_type(box, type_name):
 def set_box_callout(box, callout_name):
 
     new_box = dict(box)                     # a copy, so the old box is left alone
-    new_box["callout"] = callout_name
+    new_box["dressing"] = callout_name
     return new_box
     
 # --- ALL THE BOXES AS ONE LONG STRING OF HTML (NO TIME CARD YET) --------------------------------------------------------
@@ -751,7 +751,7 @@ def edit_box_text(box, new_text):
         lines = lines_to_items(lines)       # markers only mean something inside a list
     if not lines:
         return box
-    return change_box_type({"lines": lines, "callout": box.get("callout", "")}, type_name)
+    return change_box_type({"lines": lines, "dressing": box.get("dressing", "")}, type_name)
 
 # --- FIND EVERY [TEXT](URL) IN A PIECE OF TEXT: RETURN A LIST OF (TEXT, URL) PAIRS ----------------------------------
 # --- same hunt as format_inline, but on raw text, and it only reports; it doesn't change anything ---
