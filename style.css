@@ -487,3 +487,16 @@ aside.card:focus-visible {
   height: auto;               /* keeps the picture's shape as the card gets wider or narrower */
   margin-bottom: 16px;
 }
+
+/* the template keeps content in 10 of 12 columns, centered; the banner above it runs wider */
+.preview-content {
+  width: 83.333%;
+  margin: 0 auto;
+}
+
+/* on phone-width screens the real page uses the full width, so the preview does too */
+@media (max-width: 575px) {
+  .preview-content {
+    width: 100%;
+  }
+}
