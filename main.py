@@ -1,5 +1,5 @@
 from pyscript import document, when, window
-from md2bsp_web import text_to_boxes, box_to_html, box_type_name, change_box_type, BOX_TYPE_CHOICES, find_issues, box_to_editor_text, edit_box_text, make_preview_html, make_finished_page, make_file_name, read_file, TEMPLATE_FILE
+from md2bsp_web import text_to_boxes, box_to_html, box_type_name, change_box_type, BOX_TYPE_CHOICES, CALLOUT_CHOICES, set_box_callout, find_issues, box_to_editor_text, edit_box_text, make_preview_html, make_finished_page, make_file_name, read_file, TEMPLATE_FILE
 
 document.getElementById("status").innerText = "Python is ready."
 document.getElementById("go-button").disabled = False   # Python is ready, so turn the button on
@@ -104,6 +104,22 @@ def make_box_frame(number, box):
         picker.appendChild(option)
     picker.value = box_type_name(box)           # start on whatever the engine decided this box is
     picker.id = f"type-{number}"                # ids so the edit code can find this box's pieces again
+    
+    callout_picker = document.createElement("select")   # the callout dropdown: "No callout", then the eight icons
+    callout_picker.setAttribute("aria-label", f"Callout for box {number}")
+    callout_picker.setAttribute("data-box", str(number))
+    callout_picker.id = f"callout-{number}"
+    none_option = document.createElement("option")
+    none_option.value = ""
+    none_option.innerText = "No callout"
+    callout_picker.appendChild(none_option)
+    for value, label, icon_class in CALLOUT_CHOICES:
+        option = document.createElement("option")
+        option.value = value
+        option.innerText = label
+        callout_picker.appendChild(option)
+    callout_picker.value = box.get("callout", "")
+    callout_picker.hidden = box["kind"] == "heading"    # headings can't be callouts
 
     edit_button = document.createElement("button")   # one button that flips between Edit and Done
     edit_button.type = "button"                 # a plain button, not one that submits the form
@@ -133,6 +149,7 @@ def make_box_frame(number, box):
 
     toolbar.appendChild(badge)
     toolbar.appendChild(picker)
+    toolbar.appendChild(callout_picker)
     toolbar.appendChild(edit_button)
     frame.appendChild(toolbar)
     frame.appendChild(preview)
