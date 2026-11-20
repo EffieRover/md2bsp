@@ -461,7 +461,7 @@ textarea::placeholder {
 aside.card {
   position: sticky;
   top: 16px;
-  max-height: calc(100vh - 32px);
+  max-height: calc(100vh - 110px);
   overflow-y: auto;
 }
 
