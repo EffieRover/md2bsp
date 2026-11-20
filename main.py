@@ -50,7 +50,7 @@ SCREENS = {
         "step": "step-organize", "focus": "boxes", "back": "Back to 1: Paste",
     },
     "finish": {
-        "show": ["page-details", "preview-button", "back-button", "help-finish", "issues"],
+        "show": ["page-details", "preview-button", "back-button", "help-finish"],
         "step": "step-finish", "focus": "page-details", "back": "Back to 2: Organize",
     },
     "preview": {
