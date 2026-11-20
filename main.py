@@ -1,5 +1,5 @@
 from pyscript import document, when, window
-from md2bsp_web import text_to_boxes, box_to_html, box_type_name, change_box_type, BOX_TYPE_CHOICES, CALLOUT_CHOICES, set_box_callout, find_issues, box_to_editor_text, edit_box_text, make_preview_html, make_finished_page, make_file_name, read_file, TEMPLATE_FILE
+from md2bsp_web import text_to_boxes, box_to_html, box_type_name, change_box_type, BOX_TYPE_CHOICES, CALLOUT_CHOICES, set_box_callout, dressing_choices, find_issues, box_to_editor_text, edit_box_text, make_preview_html, make_finished_page, make_file_name, read_file, TEMPLATE_FILE
 
 document.getElementById("status").innerText = "Python is ready."
 document.getElementById("go-button").disabled = False   # Python is ready, so turn the button on
@@ -9,6 +9,8 @@ TYPE_LABELS = dict(BOX_TYPE_CHOICES)            # "h2" -> "Heading 2", so we can
 CALLOUT_LABELS = {"": "No callout"}             # same idea for callouts: "tip" -> "Tip"
 for value, label, icon_class in CALLOUT_CHOICES:
     CALLOUT_LABELS[value] = label
+CALLOUT_LABELS["accordion-title"] = "Accordion title"
+CALLOUT_LABELS["accordion-content"] = "Accordion content"
 
 # --- shortcut: hide or show one thing on the page, found by its id ---
 def set_hidden(element_id, is_hidden):
@@ -82,6 +84,16 @@ def show_screen(name):
     document.getElementById(screen["focus"]).focus()    # the button that had focus just vanished, so hand focus to the new screen
     window.scrollTo(0, 0)                       # focusing a tall element scrolls the page; put it back at the top
 
+# --- fill a box's dressing dropdown with the choices that box is allowed to have, and pick the one it has now ---
+def fill_dressing_picker(select, box):
+    select.innerHTML = ""                       # empty out whatever was there
+    for value, label in dressing_choices(box):
+        option = document.createElement("option")
+        option.value = value
+        option.innerText = label
+        select.appendChild(option)
+    select.value = box.get("dressing", "")
+    
 # --- build one framed box: a toolbar on top (number + type dropdown), the preview underneath ---
 def make_box_frame(number, box):
 
@@ -108,21 +120,11 @@ def make_box_frame(number, box):
     picker.value = box_type_name(box)           # start on whatever the engine decided this box is
     picker.id = f"type-{number}"                # ids so the edit code can find this box's pieces again
     
-    callout_picker = document.createElement("select")   # the callout dropdown: "No callout", then the eight icons
-    callout_picker.setAttribute("aria-label", f"Callout for box {number}")
+    callout_picker = document.createElement("select")   # the dressing dropdown: callouts and accordion pieces
+    callout_picker.setAttribute("aria-label", f"Callout or accordion for box {number}")
     callout_picker.setAttribute("data-box", str(number))
-    callout_picker.id = f"callout-{number}"
-    none_option = document.createElement("option")
-    none_option.value = ""
-    none_option.innerText = "No callout"
-    callout_picker.appendChild(none_option)
-    for value, label, icon_class in CALLOUT_CHOICES:
-        option = document.createElement("option")
-        option.value = value
-        option.innerText = label
-        callout_picker.appendChild(option)
-    callout_picker.value = box.get("dressing", "")
-    callout_picker.hidden = box["kind"] == "heading"    # headings can't be callouts
+    callout_picker.id = f"callout-{number}"             # keeps its old id so the rest of the code still finds it
+    fill_dressing_picker(callout_picker, box)
 
     edit_button = document.createElement("button")   # one button that flips between Edit and Done
     edit_button.type = "button"                 # a plain button, not one that submits the form
