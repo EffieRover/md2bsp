@@ -18,6 +18,7 @@ from md2bsp_web import (
     TEMPLATE_FILE,
     mark_content_after_title,
     type_choices,
+    get_video_fields,
 )
 
 document.getElementById("status").innerText = "Python is ready."
