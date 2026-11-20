@@ -17,6 +17,7 @@ from md2bsp_web import (
     read_file,
     TEMPLATE_FILE,
     mark_content_after_title,
+    type_choices,
 )
 
 document.getElementById("status").innerText = "Python is ready."
@@ -29,7 +30,6 @@ for value, label, icon_class in CALLOUT_CHOICES:
     CALLOUT_LABELS[value] = label
 CALLOUT_LABELS["accordion-title"] = "Accordion title"
 CALLOUT_LABELS["accordion-content"] = "Accordion content"
-CALLOUT_LABELS["video"] = "Video"
 
 # --- shortcut: hide or show one thing on the page, found by its id ---
 def set_hidden(element_id, is_hidden):
@@ -103,6 +103,16 @@ def show_screen(name):
     document.getElementById(screen["focus"]).focus()    # the button that had focus just vanished, so hand focus to the new screen
     window.scrollTo(0, 0)                       # focusing a tall element scrolls the page; put it back at the top
 
+# --- fill a box's type dropdown with the types that box can be (Video only if it holds a video address) and pick the current one ---
+def fill_type_picker(select, box):
+    select.innerHTML = ""                       # empty out whatever was there
+    for value, label in type_choices(box):
+        option = document.createElement("option")
+        option.value = value
+        option.innerText = label
+        select.appendChild(option)
+    select.value = box_type_name(box)           # start on whatever the engine says this box is
+
 # --- fill a box's dressing dropdown with the choices that box is allowed to have, and pick the one it has now ---
 def fill_dressing_picker(select, box):
     select.innerHTML = ""                       # empty out whatever was there
@@ -131,12 +141,7 @@ def make_box_frame(number, box):
     picker = document.createElement("select")   # the type dropdown
     picker.setAttribute("aria-label", f"Type for box {number}")
     picker.setAttribute("data-box", str(number))
-    for value, label in BOX_TYPE_CHOICES:
-        option = document.createElement("option")
-        option.value = value
-        option.innerText = label
-        picker.appendChild(option)
-    picker.value = box_type_name(box)           # start on whatever the engine decided this box is
+    fill_type_picker(picker, box)               # the choices this box can have, starting on its current type
     picker.id = f"type-{number}"                # ids so the edit code can find this box's pieces again
     
     callout_picker = document.createElement("select")   # the dressing dropdown: callouts and accordion pieces
@@ -289,6 +294,8 @@ def finish_editing(number):
     old_box = state["boxes"][number - 1]
     new_box = edit_box_text(old_box, document.getElementById(f"editor-{number}").value)
     state["boxes"][number - 1] = new_box
+    fill_type_picker(document.getElementById(f"type-{number}"), new_box)          # the words may have gained or lost a video address
+    fill_dressing_picker(document.getElementById(f"callout-{number}"), new_box)   # and the box may no longer wear what it wore
     document.getElementById(f"preview-{number}").innerHTML = box_to_html(new_box)
     set_editing_look(number, False)
     problems = render_issues(state["boxes"])                 # the fix might have cleared (or caused) a problem
