@@ -872,6 +872,17 @@ def make_video_html(info, title, length, language, number):
         '</div>\n'
     )
 
+# --- WHERE COULD WE ASK FOR THIS VIDEO'S TITLE? (YOUTUBE AND VIMEO ANSWER THAT; PANOPTO DOESN'T) ---
+
+def video_title_lookup_url(info):
+
+    direct = info["direct"]
+    if direct.startswith("https://youtu.be/"):
+        return "https://www.youtube.com/oembed?url=" + direct + "&format=json"
+    if direct.startswith("https://vimeo.com/"):
+        return "https://vimeo.com/api/oembed.json?url=" + direct
+    return None
+
 # --- A VIDEO BOX REMEMBERS ITS TITLE, LENGTH AND LANGUAGE IN box["video"]; UNTOUCHED FIELDS HAVE DEFAULTS ---
 
 def get_video_fields(box):
