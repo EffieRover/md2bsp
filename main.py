@@ -11,6 +11,24 @@ TYPE_LABELS = dict(BOX_TYPE_CHOICES)            # "h2" -> "Heading 2", so we can
 def set_hidden(element_id, is_hidden):
     document.getElementById(element_id).hidden = is_hidden
 
+# --- the page-details fields: the name the engine uses -> the id of the box on the page ---
+DETAIL_FIELDS = {
+    "before": "detail-before",
+    "materials": "detail-materials",
+    "terms": "detail-terms",
+    "questions": "detail-questions",
+    "working": "detail-working",
+    "external": "detail-external",
+    "video": "detail-video",
+}
+
+# --- read whatever the instructor typed into those fields right now; an untouched field is just empty text ---
+def read_details():
+    details = {}
+    for name, element_id in DETAIL_FIELDS.items():
+        details[name] = document.getElementById(element_id).value
+    return details
+
 # --- THE THREE SCREENS: WHAT EACH ONE SHOWS, WHICH STEP LIGHTS UP, WHERE FOCUS GOES, AND WHAT THE BACK BUTTON SAYS ---
 # --- every piece of the page that comes and goes is listed once in ALL_PARTS; a screen only lists what it shows ---
 
@@ -243,7 +261,7 @@ def go_finish(event):
 @when("click", "#preview-button")
 def show_preview(event):
     finish_all_editing()                        # an open edit box counts as a finished one
-    document.getElementById("page-preview").innerHTML = make_preview_html(state["boxes"])
+    document.getElementById("page-preview").innerHTML = make_preview_html(state["boxes"], read_details())
     problems = find_issues(state["boxes"])
     document.getElementById("result").innerText = f"Preview ready. Things to fix: {len(problems)}."
     show_screen("preview")
@@ -255,7 +273,7 @@ def download_page(event):
     except SystemExit:
         document.getElementById("result").innerText = "Can't find the page template, so nothing was downloaded."
         return
-    page = make_finished_page(template, state["boxes"])
+    page = make_finished_page(template, state["boxes"], read_details())
     file_name = make_file_name(state["boxes"])
 
     link = document.createElement("a")          # a throwaway link that does the downloading, then disappears
