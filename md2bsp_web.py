@@ -623,6 +623,15 @@ def change_box_type(box, type_name):
         new_box["callout"] = box["callout"]
     return new_box
 
+# --- THE INSTRUCTOR PICKED A CALLOUT (OR "NO CALLOUT"): RETURN A COPY OF THE BOX WITH THAT CALLOUT ---
+# --- an empty name means no callout; the box's own words and type are untouched ---
+
+def set_box_callout(box, callout_name):
+
+    new_box = dict(box)                     # a copy, so the old box is left alone
+    new_box["callout"] = callout_name
+    return new_box
+    
 # --- ALL THE BOXES AS ONE LONG STRING OF HTML (NO TIME CARD YET) --------------------------------------------------------
 # --- the web page and the command line both start from here ---
 
