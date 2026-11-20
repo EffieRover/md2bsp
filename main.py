@@ -1,5 +1,22 @@
 from pyscript import document, when, window
-from md2bsp_web import text_to_boxes, box_to_html, box_type_name, change_box_type, BOX_TYPE_CHOICES, CALLOUT_CHOICES, set_box_callout, dressing_choices, find_issues, box_to_editor_text, edit_box_text, make_preview_html, make_finished_page, make_file_name, read_file, TEMPLATE_FILE
+from md2bsp_web import (
+    text_to_boxes,
+    box_to_html,
+    box_type_name,
+    change_box_type,
+    BOX_TYPE_CHOICES,
+    CALLOUT_CHOICES,
+    set_box_callout,
+    dressing_choices,
+    find_issues,
+    box_to_editor_text,
+    edit_box_text,
+    make_preview_html,
+    make_finished_page,
+    make_file_name,
+    read_file,
+    TEMPLATE_FILE,
+)
 
 document.getElementById("status").innerText = "Python is ready."
 document.getElementById("go-button").disabled = False   # Python is ready, so turn the button on
@@ -218,10 +235,7 @@ def type_changed(event):
         message = f"Box {number} callout: {CALLOUT_LABELS[picker.value]}."
     else:                                                    # the type dropdown changed: relabel the box
         new_box = change_box_type(state["boxes"][number - 1], picker.value)
-        if new_box["kind"] == "heading":                     # headings can't be callouts, so clear it and hide the dropdown
-            new_box = set_box_callout(new_box, "")
-            callout_picker.value = ""
-        callout_picker.hidden = new_box["kind"] == "heading"
+        fill_dressing_picker(callout_picker, new_box)        # the new type may wear different things; refill the list
         message = f"Box {number} is now: {TYPE_LABELS[picker.value]}."
 
     state["boxes"][number - 1] = new_box                     # swap the old box for the new one
