@@ -641,6 +641,8 @@ def change_box_type(box, type_name):
     new_box["lines"] = lines
     if box.get("dressing"):                  # a dressing piece stays a dressing piece when the box changes type
         new_box["dressing"] = box["dressing"]
+    if box.get("video"):                     # a video box keeps its title, length and language when the type changes
+        new_box["video"] = box["video"]
     return keep_valid_dressing(new_box)
 
 # --- THE INSTRUCTOR PICKED A CALLOUT (OR "NO CALLOUT"): RETURN A COPY OF THE BOX WITH THAT CALLOUT ---
@@ -660,6 +662,8 @@ def dressing_choices(box):
     if box["kind"] == "heading":
         choices.append(("accordion-title", "Accordion title"))
     else:
+        if box["kind"] == "paragraph" and find_video(box["text"]) is not None:
+            choices.append(("video", "Video"))              # only a paragraph that holds a video address can be a video
         for name, label, icon_class in CALLOUT_CHOICES:
             choices.append((name, label))
     choices.append(("accordion-content", "Accordion content"))
@@ -842,6 +846,19 @@ def make_video_html(info, title, length, language, number):
         '</div>'
     )
 
+# --- A VIDEO BOX REMEMBERS ITS TITLE, LENGTH AND LANGUAGE IN box["video"]; UNTOUCHED FIELDS HAVE DEFAULTS ---
+
+def get_video_fields(box):
+
+    saved = box.get("video", {})
+    return {"title": saved.get("title", ""), "length": saved.get("length", ""), "language": saved.get("language", VIDEO_DEFAULT_LANGUAGE)}
+
+def set_box_video(box, title, length, language):
+
+    new_box = dict(box)                     # a copy, so the old box is untouched
+    new_box["video"] = {"title": title, "length": length, "language": language}
+    return new_box
+
 # --- ALL THE BOXES AS ONE LONG STRING OF HTML (NO TIME CARD YET) --------------------------------------------------------
 # --- the web page and the command line both start from here ---
 
@@ -955,7 +972,10 @@ def edit_box_text(box, new_text):
         lines = lines_to_items(lines)       # markers only mean something inside a list
     if not lines:
         return box
-    return change_box_type({"lines": lines, "dressing": box.get("dressing", "")}, type_name)
+    old_pieces = {"lines": lines, "dressing": box.get("dressing", "")}
+    if box.get("video"):
+        old_pieces["video"] = box["video"]                  # editing the words must not lose the video details
+    return change_box_type(old_pieces, type_name)
 
 # --- FIND EVERY [TEXT](URL) IN A PIECE OF TEXT: RETURN A LIST OF (TEXT, URL) PAIRS ----------------------------------
 # --- same hunt as format_inline, but on raw text, and it only reports; it doesn't change anything ---
