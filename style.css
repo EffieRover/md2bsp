@@ -404,7 +404,7 @@ textarea::placeholder {
   margin-bottom: 16px;
   padding: 8px 10px;
   font: inherit;
-  font-size: .95rem;
+  font-size: 16px;
   background: #fff;
   border: 1px solid var(--field-border, #8a97a3);
   border-radius: 6px;
