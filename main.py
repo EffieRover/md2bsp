@@ -29,6 +29,7 @@ for value, label, icon_class in CALLOUT_CHOICES:
     CALLOUT_LABELS[value] = label
 CALLOUT_LABELS["accordion-title"] = "Accordion title"
 CALLOUT_LABELS["accordion-content"] = "Accordion content"
+CALLOUT_LABELS["video"] = "Video"
 
 # --- shortcut: hide or show one thing on the page, found by its id ---
 def set_hidden(element_id, is_hidden):
