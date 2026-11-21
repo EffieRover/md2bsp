@@ -14,16 +14,17 @@ from md2bsp_web import (
     set_box_callout,
     dressing_choices,
     find_issues,
-    make_preview_html,
-    make_finished_page,
-    make_file_name,
-    read_file,
     mark_content_after_title,
     type_choices,
     get_video_fields,
     set_box_video,
     find_video,
     video_title_lookup_url,
+    calculate_video_minutes,
+    make_preview_html,
+    make_finished_page,
+    make_file_name,
+    read_file,
 )
 
 document.getElementById("status").innerText = "Python is ready."
@@ -428,6 +429,12 @@ def finish_all_editing():
 def go_finish(event):
     finish_all_editing()
     render_issues(state["boxes"])
+    automatic = calculate_video_minutes(state["boxes"])      # 0 when there are no videos, or no lengths typed yet
+    automatic = str(automatic) if automatic > 0 else ""
+    field = document.getElementById("detail-video")
+    if field.value == "" or field.value == state.get("auto_video", ""):    # never overwrite a number the instructor typed themselves
+        field.value = automatic
+    state["auto_video"] = automatic
     show_screen("finish")
     
 @when("click", "#preview-button")
