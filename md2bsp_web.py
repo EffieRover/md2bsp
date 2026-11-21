@@ -1053,6 +1053,15 @@ def get_box_lines(box):
         return box["items"]
     return box["text"].splitlines()
 
+# --- TAKE THE ** AND * MARKERS OFF A PIECE OF TEXT ---
+# --- a heading is already bold, so when a bold paragraph becomes a heading the ** would just show up as typed characters ---
+# --- a lone * with spaces around it (like 5 * 3 * 2) isn't emphasis, so it stays ---
+
+def strip_emphasis(text):
+    text = text.replace("**", "")
+    text = re.sub(r"\*(\S(?:[^*]*\S)?)\*", r"\1", text)     # *italic* with no spaces hugging the stars
+    return " ".join(text.split())                           # tidy any leftover double spaces
+    
 def change_box_type(box, type_name):
     lines = get_box_lines(box)
     one_piece = " ".join(line.strip() for line in lines)
@@ -1066,6 +1075,8 @@ def change_box_type(box, type_name):
         else:
             new_box = {"kind": "video", "text": one_piece}
     elif type_name.startswith("h"):
+        one_piece = strip_emphasis(one_piece)    # a heading is already bold; leftover markers would show up as typed characters
+        lines = [one_piece]                      # so the Edit box shows the clean version too
         new_box = {"kind": "heading", "level": int(type_name[1]), "text": one_piece}
     else:
         return box
