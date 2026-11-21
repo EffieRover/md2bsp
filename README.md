@@ -4,46 +4,47 @@ Loy Gross
 
 PURPOSE
 
-MD2BSP turns plain markdown text into a Brightspace web page that follows the
-standard GCC template. Faculty paste their content into a web page. The tool
-splits it into boxes (one per heading, paragraph, list, or video), shows each
-box the way it will look on the finished page, and lets the instructor fix
-labels, fix typos, fix links that don't say where they go, and add callouts,
-accordions, and videos. A last screen collects the extras that belong at the
-top and bottom of every page. Then the instructor downloads a finished page,
-ready to upload to Brightspace.
+MD2BSP turns Word doc or HTML into plain markdown text, which then gets
+converted into a Brightspace web page, following the standard GCC template. 
 
-The goal is consistent, standardized pages instead of one-off copy-and-pasted
-Word conversions. Students get pages built the same way every time, and
-instructors get a quick path to making them.
+Faculty paste their content into a web page. The tool splits it into boxes 
+(one per heading, paragraph, list, or video), shows each box the way it will 
+look on the finished page, and lets the instructor fix labels, typos, links 
+without descriptive text. 
+
+Additionally, faculty can dress each box as callouts, accordions, and videos. 
+A last screen collects the best-practice extras that belong at the top and 
+bottom of every page. Then the instructor downloads a finished page, ready 
+to upload directly to Brightspace.
+
+The goal is consistent, standardized pages free of extraneous clutter and 
+easily dressed as key points or logical organizations rather than one-off 
+copy-and-pasted conversions. Students get pages built consistently, and 
+instructors / instructional designers get a quick path to making them.
 
 
 HOW TO RUN IT
 
 Live version (nothing to install): https://effierover.github.io/md2bsp/
 
-1. Paste: paste markdown into the box and click "Chunk it." A video link on a
+1. Paste: paste your content into the box and click "Chunk it." Imports are 
+   converted to markdown first (if not already markdown). A video link on a
    line by itself becomes a Video box.
+   
 2. Organize: check the boxes and the preview. Use the dropdowns to relabel a
    box, add a callout, or mark accordion titles and accordion content, and the
    pencil to fix text. For a video, fill in the title and length (the title is
    looked up for you when the browser allows it). Clear the "Needed Repairs"
    list. Click "Next: Finishing Touches."
+   
 3. Finishing Touches: fill in only what applies (reading, video, and activity
    minutes; before you start; materials needed; key terms; guiding questions;
    working toward; Week, Unit, or Module and its number). The video minutes are
    added up from your video lengths; change them if they are wrong. Click
    "Next: Preview."
+   
 4. Preview: look over the simulated page. Accordions show open. Click
    "Download," then upload the file to Brightspace.
-
-Engine only, from the command line:
-1. Put template_gcc.html and input.md in the same folder as md2bsp_web.py.
-   (template_gcc.html is in the public repo and carries GCC branding; see the
-   LICENSE file. input.md is not in the repo.)
-2. Run: python md2bsp_web.py
-3. Open output.html.
-Python version tested: [fill in, e.g. 3.12]
 
 
 FILES
@@ -79,15 +80,13 @@ KNOWN ISSUES
 9. "Needed Repairs" checks link text that is empty or only the site name or web
    address; accordions (every title needs content, every content needs a
    title); and videos (every video needs a title and a length).
-10. If an accordion is set up wrongly, the whole accordion shows as plain boxes
+10. If an accordion is munged, the whole accordion exports as plain boxes
     until the repairs are made. The preview shows accordions open and cannot
     show how they open and close.
 11. A video's title is looked up from YouTube or Vimeo when the browser allows
     it; otherwise type it. Lengths are always typed. Panopto links are
     recognized only on panopto.com addresses and have no title lookup.
-12. The preview is a close simulation, not a copy of Brightspace. The gold box
-    colors, the callout border, and the way "Guiding questions" is laid out
-    are my estimates.
+12. The preview is a close simulation, not a copy of Brightspace. 
 13. A downloaded page, a callout, an accordion, and a YouTube video have been
     checked in a live Brightspace course. Vimeo and Panopto videos and the
     rest of the page have not been checked everywhere.
@@ -98,10 +97,6 @@ KNOWN ISSUES
 
 CHANGES FROM PLAN
 
-- Now: the same engine also runs in the browser through PyScript on GitHub
-  Pages, so instructors need no setup.
-- Words: "block" became "chunk" (a raw piece of text) and "box" (a chunk after
-  it has been labeled), because block and box were confusing.
 - Added: the Organize screen with a type dropdown, a live preview, and an
   Edit/Done button on each box, plus the "Needed Repairs" list, which stays in
   view as you scroll.
@@ -118,7 +113,6 @@ CHANGES FROM PLAN
   and the bottom-of-page line (Week/Unit/Module and Last published).
 - Added: Preview (with a stand-in banner and the template's margins) and
   Download.
-- Changed: the screens went from two to four.
 - Changed: a bare link used to become "missing text." It now becomes the site
   name, and the tool flags it until a human writes better words.
 - Changed: headings stop at H4. Deeper headings become H4.
