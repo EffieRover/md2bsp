@@ -6,6 +6,8 @@ from md2bsp_web import (
     CALLOUT_CHOICES,
     TEMPLATE_FILE,
     text_to_boxes,
+    html_to_markdown,
+    html_has_structure,
     box_to_html,
     box_type_name,
     change_box_type,
@@ -244,7 +246,37 @@ def render_issues(boxes):
             item.appendChild(document.createTextNode(" " + rest))    # a text node, so pasted urls stay plain text
         issue_list.appendChild(item)
     return len(issues)
-    
+
+# --- PASTE HOOK: IF THE CLIPBOARD CARRIES REAL FORMATTING, CONVERT IT TO MARKDOWN AS IT LANDS ---
+# --- the browser fires "paste" before anything goes into the box; we peek at the HTML copy of the clipboard ---
+# --- no real structure (or anything goes wrong)? we return without touching the event, and the normal paste happens ---
+
+@when("paste", "#markdown-input")
+def paste_arrived(event):
+
+    html = event.clipboardData.getData("text/html")
+    if not html or not html_has_structure(html):
+        return                                          # plain text, or code-editor colors: leave it alone
+
+    try:
+        markdown, notes = html_to_markdown(html)
+    except Exception as problem:
+        document.getElementById("result").innerText = f"Couldn't read the pasted formatting ({problem}), so it was pasted as plain text."
+        return
+
+    if markdown.strip() == "":                          # nothing usable in there (say, only an image); plain paste takes over
+        return
+
+    event.preventDefault()                              # stop the browser pasting its own version
+    box = document.getElementById("markdown-input")
+    if not document.execCommand("insertText", False, markdown):     # this keeps Ctrl+Z working
+        box.setRangeText(markdown, box.selectionStart, box.selectionEnd, "end")   # backup plan; undo won't work, but the text lands
+
+    message = "Pasted with formatting converted to markdown: headings, lists, bold, italic and links kept."
+    if notes:
+        message += " " + " ".join(notes)
+    document.getElementById("result").innerText = message
+
 @when("click", "#go-button")
 def chunk_it(event):
     text = document.getElementById("markdown-input").value   # whatever was pasted
