@@ -82,6 +82,11 @@ BANNER_PREVIEW_FOLDER = "https://mylearning.suny.edu/shared/Course%20File%20Temp
 DEFAULT_BANNER_FILE = "banner_03.jpg"       # ye olde ubiquitous notebook and teapot file
 DEFAULT_PAGE_BANNER = BANNER_FOLDER + DEFAULT_BANNER_FILE
 
+# --- TEMPORARY: the GCC additions live in the md2bsp GitHub repo until they can go in the Brightspace folder ---
+# --- when they are uploaded there, change the next line to GITHUB_GROUPS = [] and everything flips to Brightspace ---
+GITHUB_BANNER_FOLDER = "https://effierover.github.io/md2bsp/banners/"
+GITHUB_GROUPS = ["GCC additions"]
+
 BANNER_CHOICES = [
     ("SUNY defaults", [
         ("banner_01.jpg", "Laptop on a desk, overhead"),
@@ -92,6 +97,14 @@ BANNER_CHOICES = [
         ("banner_06.jpg", "Office window with city view"),
         ("banner_07.jpg", "Notebooks and pens"),
         ("banner_08.jpg", "Laptop and coffee cup"),
+    ]),
+    ("GCC Loy's Options", [
+        ("gcc_welcomeofficedoor.jpg", "Glass entrance to a faculty office"),
+        ("gcc_welcomeofficedesk.jpg", "Faculty desk with lamp and mug"),
+        ("gcc_courseoverviewhallway.jpg", "Atrium overlook with wood railing"),
+        ("gcc_courseoverviewdesk.jpg", "Binder and blank pages on a desk"),
+        ("gcc_courseoverviewhallclock.jpg", "Wall clock in a block-wall hallway"),
+        ("gcc_courseoverviewhallstairs.jpg", "Stairs with wood handrail"),
     ]),
 ]
 
@@ -1012,10 +1025,21 @@ def get_banner_file(details):
                 return chosen
     return DEFAULT_BANNER_FILE
 
+# --- WHERE DOES THIS BANNER LIVE? ---
+# --- a banner in a group listed in GITHUB_GROUPS comes from GitHub (for both the preview and the finished page); everything else comes from the Brightspace folder ---
+
+def banner_folder_for(file_name, preview=False):
+    for group_label, banners in BANNER_CHOICES:
+        for name, description in banners:
+            if name == file_name and group_label in GITHUB_GROUPS:
+                return GITHUB_BANNER_FOLDER
+    return BANNER_PREVIEW_FOLDER if preview else BANNER_FOLDER
+
 # --- THE WEB ADDRESS THE PREVIEW LOADS THE BANNER FROM ---
 
 def banner_preview_url(file_name):
-    return BANNER_PREVIEW_FOLDER + get_banner_file({"banner": file_name})
+    file_name = get_banner_file({"banner": file_name})
+    return banner_folder_for(file_name, preview=True) + file_name
 
 # --- IT PUTS THE HTML IN THE TEMPLATE OR ELSE IT GETS THE WONKY FILE AGAIN -------------------------------------------
 # --- takes the template text, boxes, content, works out the title, banner, leader ---
@@ -1030,7 +1054,8 @@ def build_page(template, boxes, content, page_leader, details=None):
             break                       # okay, we found it, stop looking
 
     # --- the banner the instructor picked (or the default) ---
-    banner = BANNER_FOLDER + get_banner_file(details)
+    banner_file = get_banner_file(details)
+    banner = banner_folder_for(banner_file) + banner_file
 
     # --- the time list goes right after the H1; the 1 at the end means only the first </h1> ---
     content = content.replace("</h1>", "</h1>\n" + page_leader, 1)
