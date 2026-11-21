@@ -84,8 +84,8 @@ DEFAULT_PAGE_BANNER = BANNER_FOLDER + DEFAULT_BANNER_FILE
 
 # --- TEMPORARY: the GCC additions live in the md2bsp GitHub repo until they can go in the Brightspace folder ---
 # --- when they are uploaded there, change the next line to GITHUB_GROUPS = [] and everything flips to Brightspace ---
-GITHUB_BANNER_FOLDER = "https://effierover.github.io/md2bsp/banners/"
-GITHUB_GROUPS = ["GCC additions"]
+GITHUB_BANNER_FOLDER = "https://effierover.github.io/md2bsp/gcc_banners/"
+GITHUB_GROUPS = ["GCC Loy's Options"]
 
 BANNER_CHOICES = [
     ("SUNY defaults", [
