@@ -46,12 +46,6 @@ Engine only, from the command line:
 Python version tested: [fill in, e.g. 3.12]
 
 
-SAMPLE RUN
-
-(unchanged: keep your existing sample run here)
-[Replace with output from your own run.]
-
-
 FILES
 
 index.html           the web page (the four screens)
