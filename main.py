@@ -69,18 +69,23 @@ def read_details():
         details[name] = document.getElementById(element_id).value
     return details
 
-# --- THE BANNER PICKER: A LABELED DROPDOWN, BUILT HERE AND DROPPED IN JUST ABOVE THE PREVIEW ---
+# --- THE BANNER PICKER: A LABELED DROPDOWN, BUILT HERE AND DROPPED INTO THE RIGHT-HAND COLUMN, JUST ABOVE NEEDED REPAIRS ---
 # --- the choices come from BANNER_CHOICES in the engine; each group becomes a heading inside the dropdown ---
+# --- it borrows the class of the Needed Repairs section (and its heading's class), so it looks like its neighbors ---
 def make_banner_picker():
+    issues = document.getElementById("issues")
     area = document.createElement("div")
     area.id = "banner-area"
-    area.className = "banner-area"
+    area.className = ("banner-area " + issues.className).strip()
     area.hidden = True                          # the preview screen shows it; every other screen hides it
-    label = document.createElement("label")
-    label.setAttribute("for", "banner-choice")
-    label.innerText = "Banner"
+    heading_model = issues.firstElementChild    # the "Needed repairs" heading; we copy its tag and class
+    heading = document.createElement(heading_model.tagName)
+    heading.className = heading_model.className
+    heading.id = "banner-heading"
+    heading.innerText = "Banner"
     picker = document.createElement("select")
     picker.id = "banner-choice"
+    picker.setAttribute("aria-labelledby", "banner-heading")    # the visible heading names the dropdown for screen readers
     for group_label, banners in BANNER_CHOICES:
         group = document.createElement("optgroup")
         group.setAttribute("label", group_label)
@@ -91,9 +96,9 @@ def make_banner_picker():
             group.appendChild(option)
         picker.appendChild(group)
     picker.value = DEFAULT_BANNER_FILE          # start on the notebook and teapot, same as always
-    area.appendChild(label)
+    area.appendChild(heading)
     area.appendChild(picker)
-    document.getElementById("page-preview").before(area)
+    issues.before(area)                         # right before Needed Repairs, so right after How this works
 
 make_banner_picker()
 
