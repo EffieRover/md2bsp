@@ -61,7 +61,9 @@ import sys                                  # allows us to stop the program with
 from html import escape                     # make text safe to put inside HTML / sanitize it
 import math                                 # cuz we be calculatin' reading time
 from datetime import date                   # short date formats ...
-from urllib.parse import urlparse           # chops a web address into its parts (host, path, etc)
+from urllib.parse import urlparse, parse_qs # chops a web address into its parts (host, path, etc); parse_qs reads the ?q=stuff part
+import re                                   # pattern matching, for reading styles out of pasted HTML
+from html.parser import HTMLParser          # reads pasted HTML tag by tag
 
 # --- SETTINGS --------------------------------------------------------------------------------------------------------
 
@@ -153,6 +155,414 @@ def clean_text(text):
         text = text.replace("  ", " ")
 
     return text
+
+# --- PASTE CONVERSION: COPIED WORD / GOOGLE DOCS / WEB STUFF BECOMES MARKDOWN -----------------------------------------
+# --- when somebody copies from Word or a web page, the clipboard carries two versions: plain text and HTML ---
+# --- the HTML one knows what's a heading, a list, bold, and a link; plain text knows none of that ---
+# --- this section reads the HTML and keeps ONLY what our pages can use: headings, paragraphs, lists, bold, italic, links ---
+# --- colors, fonts, sizes, spacing and every other bit of wild-ass formatting get dropped on purpose ---
+
+SKIP_TAGS = {"script", "style", "head", "title", "svg", "noscript", "template", "iframe", "object",
+             "canvas", "button", "select", "textarea", "xml", "nav"}   # whole elements we throw away, contents and all
+VOID_TAGS = {"br", "img", "hr", "meta", "link", "input", "col", "area", "base", "wbr", "source", "embed", "param", "track"}   # tags with no closing partner
+HEADING_TAGS = {"h1", "h2", "h3", "h4", "h5", "h6"}
+BLOCK_TAGS = {"p", "div", "section", "article", "header", "footer", "main", "aside", "blockquote", "pre",
+              "address", "figure", "figcaption", "dl", "dt", "dd", "center", "form", "fieldset", "body", "html"}   # each one starts a new paragraph
+SPACE_TAGS = BLOCK_TAGS | HEADING_TAGS | {"ul", "ol", "li", "tr", "td", "th", "table"}   # inside a table cell these just become a space
+
+# --- DOES THIS CLIPBOARD HTML HAVE REAL STRUCTURE, OR IS IT JUST A CODE EDITOR'S COLORED SPANS? ---
+# --- code editors copy colors as HTML but have no headings, lists, or links; for those we leave the plain-text paste alone ---
+
+def html_has_structure(html):
+    if re.search(r"<(h[1-6]|p|ul|ol|li|table|b|strong|i|em)(?=[\s>/])", html, re.IGNORECASE):
+        return True
+    return re.search(r"<a\s[^>]*href", html, re.IGNORECASE) is not None
+
+# --- READ A STYLE ATTRIBUTE FOR BOLD OR ITALIC ---
+# --- Google Docs makes bold with a style (font-weight:700), not a <b> tag, and wraps the WHOLE doc in a <b> that says font-weight:normal ---
+# --- returns True (yes), False (explicitly not), or None (the style doesn't say) ---
+# --- the (?<![\w-]) bit stops us from reading Word's "mso-bidi-font-weight" as if it were the real thing ---
+
+def style_says_bold(style):
+    found = re.search(r"(?<![\w-])font-weight\s*:\s*([a-z0-9]+)", style)
+    if not found:
+        return None
+    value = found.group(1)
+    if value in ("inherit", "initial", "unset"):
+        return None
+    if value in ("bold", "bolder"):
+        return True
+    if value.isdigit():
+        return int(value) >= 600
+    return False                                # normal, lighter
+
+def style_says_italic(style):
+    found = re.search(r"(?<![\w-])font-style\s*:\s*([a-z]+)", style)
+    if not found:
+        return None
+    value = found.group(1)
+    if value in ("italic", "oblique"):
+        return True
+    if value == "normal":
+        return False
+    return None
+
+# --- CLEAN UP A PASTED LINK; RETURN None IF WE CAN'T USE IT ---
+# --- Google Docs and Outlook wrap every link in a redirect; dig out the real address ---
+# --- only http/https links survive (our chunker only recognizes those); mailto, #anchors and relative links become plain text ---
+# --- spaces and parentheses get encoded because a ")" inside the address would end the markdown link early ---
+
+def clean_pasted_link(href):
+    if not href:
+        return None
+    href = href.strip()
+    try:
+        parts = urlparse(href)
+        host = (parts.hostname or "").lower()
+        wrapped = None
+        if host.endswith("google.com") and parts.path == "/url":
+            wrapped = parse_qs(parts.query).get("q") or parse_qs(parts.query).get("url")
+        elif host.endswith("safelinks.protection.outlook.com"):
+            wrapped = parse_qs(parts.query).get("url")
+        if wrapped:
+            href = wrapped[0]
+            parts = urlparse(href)
+    except ValueError:                          # garbage address, like a broken [ in the host
+        return None
+    if parts.scheme not in ("http", "https"):
+        return None
+    return href.replace(" ", "%20").replace("(", "%28").replace(")", "%29")
+
+# --- A RUN IS A PIECE OF TEXT THAT ALL LOOKS THE SAME: (text, bold, italic, link address) ---
+# --- turn a pile of runs into one line of markdown ---
+# --- spaces stay OUTSIDE the ** and * markers, because our bold/italic code ignores markers hugging spaces ---
+# --- bold AND italic comes out bold only; our chunker can't nest them yet ---
+
+def emphasize(text, bold, italic):
+    core = text.strip()
+    if core == "":
+        return text
+    lead = text[:len(text) - len(text.lstrip())]
+    trail = text[len(text.rstrip()):]
+    if bold:
+        core = "**" + core + "**"
+    elif italic:
+        core = "*" + core + "*"
+    return lead + core + trail
+
+def render_runs(runs, plain=False):
+
+    pieces = []
+    for text, bold, italic, href in runs:
+        text = re.sub(r"\s+", " ", text)        # Word wraps its HTML at weird places; every run of whitespace becomes one space
+        if text == "":
+            continue
+        if plain:                               # headings get no bold, italic or links, just words
+            bold, italic, href = False, False, None
+        if bold:
+            italic = False
+        pieces.append([text, bold, italic, href])
+
+    merged = []                                 # glue neighbors that look identical
+    for piece in pieces:
+        if merged and merged[-1][1:] == piece[1:]:
+            merged[-1][0] += piece[0]
+        else:
+            merged.append(piece)
+
+    line = ""
+    i = 0
+    while i < len(merged):
+        href = merged[i][3]
+        j = i
+        inner = ""
+        while j < len(merged) and merged[j][3] == href:     # everything with the same link address is ONE link
+            text = merged[j][0]
+            if href:
+                text = text.replace("[", "").replace("]", "")
+            inner += emphasize(text, merged[j][1], merged[j][2])
+            j += 1
+        if href and inner.strip() != "":
+            lead = inner[:len(inner) - len(inner.lstrip())]
+            trail = inner[len(inner.rstrip()):]
+            inner = lead + "[" + inner.strip() + "](" + href + ")" + trail
+        line += inner
+        i = j
+
+    return " ".join(line.split())               # squash double spaces and trim both ends
+
+# --- THE READER: WALKS THROUGH THE HTML TAG BY TAG AND PILES UP BLOCKS (HEADINGS, PARAGRAPHS, LISTS) ---
+# --- HTMLParser is built into python; it calls handle_starttag / handle_endtag / handle_data as it walks along ---
+
+class PasteReader(HTMLParser):
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.blocks = []                        # the finished pile: dicts with "t" = heading / para / list
+        self.runs = []                          # text we've seen since the last block ended
+        self.stack = []                         # open tags, each with its (bold, italic, link) so formatting inherits downward
+        self.skip = None                        # [tag, depth, capture]; set while we're inside something we're throwing away
+        self.heading = 0                        # which heading level we're inside, 0 for none
+        self.list_stack = []                    # open <ul>/<ol> tags
+        self.li_depth = 0                       # how many <li> deep we are
+        self.group = None                       # the list block currently collecting items
+        self.group_id = None                    # Word's own id for its list, so two different lists don't merge
+        self.word_item = None                   # set while inside a Word fake-bullet paragraph
+        self.table_depth = 0
+        self.row = None
+        self.images = 0
+        self.table_rows = 0
+        self.nested = False
+        self.high_heading = False
+
+    # --- what formatting are we sitting inside right now? ---
+    def current_format(self):
+        if self.stack:
+            return self.stack[-1][1], self.stack[-1][2], self.stack[-1][3]
+        return False, False, None
+
+    def add_space(self):
+        self.runs.append((" ", False, False, None))
+
+    def add_para(self, text):
+        self.group = None
+        self.blocks.append({"t": "para", "text": text})
+
+    def add_heading(self, level, text):
+        self.group = None
+        if level > 4:                           # our boxes only go to level 4
+            level = 4
+            self.high_heading = True
+        self.blocks.append({"t": "heading", "level": level, "text": text})
+
+    def add_item(self, text, ordered, list_id=None):
+        if self.group is None or self.group_id != list_id:
+            self.group = {"t": "list", "ordered": ordered, "items": []}
+            self.group_id = list_id
+            self.blocks.append(self.group)
+        self.group["items"].append(text)
+
+    # --- turn the pile of runs into a block, and decide what kind of block it is ---
+    def flush(self):
+        text = render_runs(self.runs, plain=bool(self.heading))
+        self.runs = []
+        if text == "":
+            return
+        if self.heading:
+            self.add_heading(self.heading, text)
+        elif self.li_depth:
+            self.add_item(text, bool(self.list_stack) and self.list_stack[0] == "ol")
+        elif self.word_item:
+            self.add_item(text, self.word_item["ordered"], self.word_item["id"])
+        else:
+            self.add_para(text)
+
+    # --- we just finished skipping an element; if it was Word's bullet marker, peek at what it said ---
+    def finish_skip(self):
+        capture = self.skip[2]
+        self.skip = None
+        if capture is not None and self.word_item is not None:
+            marker = "".join(capture).replace("\xa0", " ").strip()
+            # "1." "a." "iv)" are numbers; the dot, the square, the o are bullets
+            self.word_item["ordered"] = re.fullmatch(r"\(?[0-9A-Za-z]{1,4}[.)]", marker) is not None
+
+    def handle_starttag(self, tag, attrs):
+        attrs = {name: (value or "") for name, value in attrs}
+        style = attrs.get("style", "").lower()
+        squeezed = style.replace(" ", "")
+
+        if self.skip:                           # still inside a thrown-away element; just keep count of same-name tags
+            if tag == self.skip[0] and tag not in VOID_TAGS:
+                self.skip[1] += 1
+            return
+
+        if tag not in VOID_TAGS:
+            if tag in SKIP_TAGS or "display:none" in squeezed or "mso-hide:all" in squeezed:
+                self.skip = [tag, 1, None]
+                return
+            if "mso-list:ignore" in squeezed:   # Word's fake bullet or number; read it, then throw it away
+                self.skip = [tag, 1, []]
+                return
+
+        if tag == "br":
+            self.add_space()
+            return
+        if tag == "img":
+            self.images += 1
+            return
+        if tag == "hr":
+            if not self.table_depth:
+                self.flush()
+            return
+        if tag in VOID_TAGS:
+            return
+
+        # --- formatting: tag first, then let the style attribute overrule ---
+        bold, italic, href = self.current_format()
+        if tag in ("b", "strong"):
+            bold = True
+        if tag in ("i", "em"):
+            italic = True
+        says = style_says_bold(style)
+        if says is not None:
+            bold = says
+        says = style_says_italic(style)
+        if says is not None:
+            italic = says
+        if tag == "a":
+            href = clean_pasted_link(attrs.get("href"))
+        self.stack.append((tag, bold, italic, href))
+
+        # --- tables: flatten them. each row will become one paragraph ---
+        if tag == "table":
+            if self.table_depth == 0:
+                self.flush()
+            else:
+                self.add_space()
+            self.table_depth += 1
+            return
+        if self.table_depth:
+            if self.table_depth == 1 and tag == "tr":
+                self.row = []
+            elif self.table_depth == 1 and tag in ("td", "th"):
+                self.runs = []
+            elif tag in SPACE_TAGS:
+                self.add_space()
+            return
+
+        # --- everything else ---
+        if tag in HEADING_TAGS:
+            self.flush()
+            self.heading = int(tag[1])
+        elif tag in ("ul", "ol"):
+            self.flush()                        # text sitting in a parent <li> becomes its item first
+            if self.list_stack:
+                self.nested = True
+            else:
+                self.group = None               # a brand new list starts a brand new block
+            self.list_stack.append(tag)
+        elif tag == "li":
+            self.flush()
+            self.li_depth += 1
+        elif tag in BLOCK_TAGS:
+            if self.li_depth:                   # Google Docs puts <p> inside <li>; that's the same item, not a new paragraph
+                self.add_space()
+            else:
+                self.flush()
+                if tag == "p" and "mso-list" in squeezed and "mso-list:none" not in squeezed:
+                    found = re.search(r"mso-list:(l\d+)", squeezed)
+                    level = re.search(r"level(\d+)", squeezed)
+                    if level and int(level.group(1)) > 1:
+                        self.nested = True
+                    self.word_item = {"id": found.group(1) if found else "word", "ordered": False}
+
+    def handle_endtag(self, tag):
+        if self.skip:
+            if tag == self.skip[0]:
+                self.skip[1] -= 1
+                if self.skip[1] == 0:
+                    self.finish_skip()
+            return
+        if tag in VOID_TAGS:
+            if tag == "br":
+                self.add_space()
+            return
+
+        for i in range(len(self.stack) - 1, -1, -1):    # close this tag, and anything left open inside it
+            if self.stack[i][0] == tag:
+                del self.stack[i:]
+                break
+
+        if tag == "table":
+            if self.table_depth > 1:
+                self.add_space()
+            if self.table_depth:
+                self.table_depth -= 1
+            if self.table_depth == 0:
+                self.flush()
+            return
+        if self.table_depth:
+            if self.table_depth == 1 and tag in ("td", "th"):
+                cell = render_runs(self.runs)
+                self.runs = []
+                if cell and self.row is not None:
+                    self.row.append(cell)
+            elif self.table_depth == 1 and tag == "tr":
+                if self.row:
+                    self.add_para(" | ".join(self.row))
+                    self.table_rows += 1
+                self.row = None
+            elif tag in SPACE_TAGS:
+                self.add_space()
+            return
+
+        if tag in HEADING_TAGS:
+            self.flush()
+            self.heading = 0
+        elif tag in ("ul", "ol"):
+            self.flush()
+            if self.list_stack:
+                self.list_stack.pop()
+            if not self.list_stack:
+                self.group = None
+        elif tag == "li":
+            self.flush()
+            self.li_depth = max(0, self.li_depth - 1)
+        elif tag in BLOCK_TAGS:
+            if self.li_depth:
+                self.add_space()
+            else:
+                self.flush()
+                if tag == "p":
+                    self.word_item = None
+
+    def handle_data(self, data):
+        if self.skip:
+            if self.skip[2] is not None:
+                self.skip[2].append(data)
+            return
+        bold, italic, href = self.current_format()
+        self.runs.append((data.replace("\xa0", " "), bold, italic, href))
+
+# --- THE ONE-STOP FUNCTION: HTML IN, (MARKDOWN, NOTES) OUT ---
+# --- the notes are plain-English things we dropped or flattened, so the page can tell the person ---
+# --- Word and Chrome mark where the copied part starts and ends; everything outside is page furniture ---
+
+def html_to_markdown(html):
+
+    start = html.find("<!--StartFragment-->")
+    end = html.find("<!--EndFragment-->")
+    if start != -1 and end > start:
+        html = html[start + len("<!--StartFragment-->"):end]
+
+    reader = PasteReader()
+    reader.feed(html)
+    reader.close()
+    reader.flush()
+
+    pieces = []
+    for block in reader.blocks:
+        if block["t"] == "heading":
+            pieces.append("#" * block["level"] + " " + block["text"])
+        elif block["t"] == "list":
+            lines = []
+            for number, item in enumerate(block["items"], start=1):
+                lines.append(f"{number}. {item}" if block["ordered"] else f"- {item}")
+            pieces.append("\n".join(lines))
+        else:
+            pieces.append(block["text"])
+
+    notes = []
+    if reader.images:
+        notes.append(f"{reader.images} image(s) left out. Images aren't supported yet, so add them back in Brightspace.")
+    if reader.table_rows:
+        notes.append(f"A table was flattened into {reader.table_rows} paragraph(s), one per row, with cells separated by |. Check that it still reads right.")
+    if reader.nested:
+        notes.append("Nested list items were moved up to one level.")
+    if reader.high_heading:
+        notes.append("A heading below level 4 was made a level 4 heading.")
+
+    return "\n\n".join(pieces), notes
 
 # --- WHAT SHOULD A BARE LINK SAY UNTIL A HUMAN FIXES IT? THE WEB ADDRESS'S SITE NAME ----------------------------------
 # --- www.genesee.edu/blah/page.html becomes genesee.edu; subdomains stay (library.genesee.edu) so links are tellable apart ---
