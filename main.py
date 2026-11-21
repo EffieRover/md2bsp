@@ -554,8 +554,8 @@ def download_page(event):
         document.getElementById("result").innerText = "Can't find the page template, so nothing was downloaded."
         return
     page = make_finished_page(template, state["boxes"], read_details())
-    file_name = make_file_name(state["boxes"])
-
+    file_name = make_file_name(state["boxes"], read_details())
+    
     link = document.createElement("a")          # a throwaway link that does the downloading, then disappears
     link.href = "data:text/html;charset=utf-8," + window.encodeURIComponent(page)
     link.download = file_name
