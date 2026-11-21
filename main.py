@@ -5,6 +5,9 @@ from md2bsp_web import (
     BOX_TYPE_CHOICES,
     CALLOUT_CHOICES,
     TEMPLATE_FILE,
+    BANNER_CHOICES,
+    DEFAULT_BANNER_FILE,
+    banner_preview_url,
     text_to_boxes,
     html_to_markdown,
     html_has_structure,
@@ -54,6 +57,7 @@ DETAIL_FIELDS = {
     "external": "detail-external",
     "video": "detail-video",
     "activity": "detail-activity",
+    "banner": "banner-choice",
     "unit_type": "detail-unit-type",
     "unit_number": "detail-unit-number",
 }
@@ -65,6 +69,34 @@ def read_details():
         details[name] = document.getElementById(element_id).value
     return details
 
+# --- THE BANNER PICKER: A LABELED DROPDOWN, BUILT HERE AND DROPPED IN JUST ABOVE THE PREVIEW ---
+# --- the choices come from BANNER_CHOICES in the engine; each group becomes a heading inside the dropdown ---
+def make_banner_picker():
+    area = document.createElement("div")
+    area.id = "banner-area"
+    area.className = "banner-area"
+    area.hidden = True                          # the preview screen shows it; every other screen hides it
+    label = document.createElement("label")
+    label.setAttribute("for", "banner-choice")
+    label.innerText = "Banner"
+    picker = document.createElement("select")
+    picker.id = "banner-choice"
+    for group_label, banners in BANNER_CHOICES:
+        group = document.createElement("optgroup")
+        group.setAttribute("label", group_label)
+        for file_name, description in banners:
+            option = document.createElement("option")
+            option.value = file_name
+            option.innerText = description
+            group.appendChild(option)
+        picker.appendChild(group)
+    picker.value = DEFAULT_BANNER_FILE          # start on the notebook and teapot, same as always
+    area.appendChild(label)
+    area.appendChild(picker)
+    document.getElementById("page-preview").before(area)
+
+make_banner_picker()
+
 # --- THE THREE SCREENS: WHAT EACH ONE SHOWS, WHICH STEP LIGHTS UP, WHERE FOCUS GOES, AND WHAT THE BACK BUTTON SAYS ---
 # --- every piece of the page that comes and goes is listed once in ALL_PARTS; a screen only lists what it shows ---
 
@@ -72,7 +104,7 @@ ALL_PARTS = ["paste-screen", "boxes", "page-preview", "page-details",
              "go-button", "clear-button", "finish-button", "preview-button",
              "download-button", "back-button",
              "help-paste", "help-organize", "help-finish", "help-preview",
-             "issues"]
+             "issues", "banner-area"]
 
 STEP_IDS = ["step-paste", "step-organize", "step-finish", "step-preview"]
 
@@ -90,7 +122,7 @@ SCREENS = {
         "step": "step-finish", "focus": "page-details", "back": "Back to 2: Organize",
     },
     "preview": {
-        "show": ["page-preview", "download-button", "back-button", "help-preview", "issues"],
+        "show": ["banner-area", "page-preview", "download-button", "back-button", "help-preview", "issues"],
         "step": "step-preview", "focus": "page-preview", "back": "Back to 3: Finishing Touches",
     },
 }
@@ -539,12 +571,22 @@ def go_finish(event):
 @when("click", "#preview-button")
 def show_preview(event):
     finish_all_editing()                        # an open edit box counts as a finished one
-    banner = '<img class="preview-banner" src="./preview_banner.jpg" alt="">'    # a stand-in for the real banner, preview only
+    banner_url = banner_preview_url(read_details()["banner"])    # the real banner, loaded from the shared Brightspace folder
+    banner = (f'<img id="preview-banner-img" class="preview-banner" src="{banner_url}" '
+              'onerror="this.onerror=null; this.src=\'./preview_banner.jpg\'" alt="">')    # if that address ever fails, the mint stand-in takes over
     content = '<div class="preview-content">' + make_preview_html(state["boxes"], read_details()) + '</div>'    # the narrower column the template puts content in
     document.getElementById("page-preview").innerHTML = banner + content
     problems = find_issues(state["boxes"])
     document.getElementById("result").innerText = f"Preview ready. Things to fix: {len(problems)}."
     show_screen("preview")
+
+# --- the instructor picked a different banner: swap the picture in the preview (the download reads the dropdown when it's clicked) ---
+@when("change", "#banner-choice")
+def banner_changed(event):
+    picker = event.target
+    document.getElementById("preview-banner-img").src = banner_preview_url(picker.value)
+    description = picker.options.item(picker.selectedIndex).innerText
+    document.getElementById("result").innerText = f"Banner: {description}."
 
 @when("click", "#download-button")
 def download_page(event):
