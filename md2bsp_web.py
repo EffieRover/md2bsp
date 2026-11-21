@@ -7,10 +7,13 @@ WHAT IT DOES:
     because I want the instructor to be able to check some things and clean some things up before it goes out.
     Words I use: a CHUNK is a piece of the raw text (a heading, a paragraph, a list).
                  a BOX is a chunk after the program has decided what it is and labeled it.
+                 a DRESSING is something a box wears: a callout, or an accordion title or accordion content. The box
+                 underneath stays what it was (a list stays a list); the dressing only changes how it is shown.
     Phase 1: pull apart the input file into chunks and put each chunk in a labeled box
-        Phase 1.1 (done, on the web page): the instructor can relabel boxes, fix typos and links, and dress a box up as a callout
-        Phase 1.2 (done, on the web page): a Finishing Touches screen asks for reading length, materials needed, 
-            key terms, guiding questions, and Week/Unit/Module
+        Phase 1.1 (done, on the web page): the instructor can relabel boxes, fix typos and links, dress a box up as a callout,
+            mark boxes as accordion titles and accordion content, and turn a video link into a video box
+        Phase 1.2 (done, on the web page): a Finishing Touches screen asks for reading, video, and activity minutes, materials needed, 
+            key terms, guiding questions, and Week/Unit/Module (video minutes are added up from the video boxes)
     Phase 2: convert those boxes into HTML
     Phase 3: drop the HTML into the template file and save it (on the web page, Download does this)
 
@@ -35,24 +38,22 @@ KNOWN ISSUES:
     9. A heading glued to its paragraph with no blank line stays one heading box
     10. Underscores for italics are not supported (asterisks only)
     11. Going Back to step 1 on the web page erases relabels and edits
-
-DONE:
-    1. Web version (GitHub Pages + PyScript): paste, chunk, show the boxes, let the instructor relabel and edit them
-    2. Finished page delivered as a download
-    3. Before you start, materials needed, key terms, guiding questions, working toward, and time on task at the top of the page
-    4. Week/Unit/Module and Last published at the bottom of the page
-    5. Callouts: any box except a heading can be dressed up as a blue icon card
+    12. If any piece of an accordion is set up wrongly, the whole stretch of accordion boxes comes out as plain boxes
+    13. Panopto videos are recognized only on panopto.com addresses; video lengths are always typed, and titles are
+        looked up (by main.py) for YouTube and Vimeo only
 
 TODO:
-    1. Recognize and format videos in an accessible (WCAG) manner
-    2. Accordions, tabs, blockquotes (dressing up boxes the way callouts do)
-    3. Accept uploaded markdown and Word files; convert pasted web content
-    4. Start the suggestion engine ... suggest callouts, accordions, tabs
-    5. A Best Practices review step: missing closings, skipped heading levels, image alt text
-    6. Carry relabels and edits back when the instructor goes Back to step 1
-    7. A generic template for people outside GCC
+    1. Tabs and blockquotes (dressing up boxes the way callouts and accordions do), then tables and images
+    2. Accept uploaded markdown and Word files; convert pasted Word and web formatting (keep headings, paragraphs,
+       lists, bold, italic, and links; drop the rest; flatten tables)
+    3. Start the suggestion engine ... suggest callouts, accordions, tabs
+    4. A Best Practices review step: missing closings, skipped heading levels, image alt text, a heading with nothing under it,
+       an accordion lead-in
+    5. Carry relabels and edits back when the instructor goes Back to step 1
+    6. A generic template for people outside GCC
 
 """
+
 # --- IMPORTS ---------------------------------------------------------------------------------------------------------
 
 import os                                   # allows us to ask for device folders, for now
@@ -923,6 +924,16 @@ def set_box_video(box, title, length, language):
     new_box["video"] = {"title": title, "length": length, "language": language}
     return new_box
 
+# --- EVERY VIDEO LINK ON A PAGE NEEDS ITS OWN ID: SWAP THE "#" PLACEHOLDERS FOR 0, 1, 2... IN PAGE ORDER ---
+
+def number_video_links(html):
+
+    count = 0
+    while 'id="new-window#"' in html:
+        html = html.replace('id="new-window#"', f'id="new-window{count}"', 1)
+        count += 1
+    return html
+
 # --- ALL THE BOXES AS ONE LONG STRING OF HTML (NO TIME CARD YET) --------------------------------------------------------
 # --- the web page and the command line both start from here ---
 
@@ -942,8 +953,8 @@ def boxes_to_content(boxes):
         else:
             pieces.append(box_to_html(boxes[index]))
             index += 1
-    return "\n".join(pieces)               # newlines cuz humans have to check it
-
+    return number_video_links("\n".join(pieces))    # newlines cuz humans have to check it; then give each video link its own id
+    
 # --- THE PREVIEW: THE CONTENT WITH THE TIME CARD DROPPED IN RIGHT AFTER THE H1, SAME AS THE REAL PAGE ---
 # --- no template here; the template's styles only exist inside Brightspace, so this is a simulation ---
 
