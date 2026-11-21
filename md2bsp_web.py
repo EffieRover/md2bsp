@@ -1191,7 +1191,7 @@ def make_accordion_html(run_boxes):
     all_cards = "\n".join(cards)
     return (
         '<!-- accordion begin -->\n'
-        '<div class="container-fluid">\n'
+        '<div class="container-fluid mb-3">\n'
         '<div class="accordion">\n'
         f'{all_cards}\n'
         '</div>\n'
