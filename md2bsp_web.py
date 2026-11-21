@@ -73,8 +73,27 @@ INPUT_FILE = "input.md"                     # the fixed input file, for now
 OUTPUT_FILE = "output.html"                 # the fixed output file, for now
 WORDS_PER_MINUTE = 200                      # average reading speed, used for time on task calculation
 
-DEFAULT_PAGE_BANNER = "/shared/Course File Templates/GNC/pages/../_assets/img/banner_03.jpg"
-                                            # ye olde ubiquitous notebook and teapot file
+# --- THE BANNERS: ALL LIVE IN ONE SHARED FOLDER INSIDE BRIGHTSPACE; A CHOICE IS JUST A FILE NAME ---
+# --- BANNER_CHOICES is a list of groups; each group is (group label, [(file name, what the picture shows), ...]) ---
+# --- to add a banner you uploaded to that folder, add one line to a group (or start a new group) ---
+
+BANNER_FOLDER = "/shared/Course File Templates/GNC/pages/../_assets/img/"      # the address the downloaded page uses; Brightspace understands it
+BANNER_PREVIEW_FOLDER = "https://mylearning.suny.edu/shared/Course%20File%20Templates/GNC/_assets/img/"   # the same folder as a web address, so the preview can show it from outside Brightspace
+DEFAULT_BANNER_FILE = "banner_03.jpg"       # ye olde ubiquitous notebook and teapot file
+DEFAULT_PAGE_BANNER = BANNER_FOLDER + DEFAULT_BANNER_FILE
+
+BANNER_CHOICES = [
+    ("SUNY defaults", [
+        ("banner_01.jpg", "Laptop on a desk, overhead"),
+        ("banner_02.jpg", "Coffee and grid notebook"),
+        ("banner_03.jpg", "Notebook and teapot"),
+        ("banner_04.jpg", "Desk lamp, succulent and iMac"),
+        ("banner_05.jpg", "Camera, iPad and plant"),
+        ("banner_06.jpg", "Office window with city view"),
+        ("banner_07.jpg", "Notebooks and pens"),
+        ("banner_08.jpg", "Laptop and coffee cup"),
+    ]),
+]
 
 JUNK_TO_PLAIN = {                           # get rid of Microsoft "smart" bullshit
     "\u201c": '"',                          # curly open double quote
@@ -981,11 +1000,27 @@ def make_page_end(details=None):
 
     return '<p style="font-size: 16px;">' + "<br>".join(lines) + "</p>"
     
+
+# --- WHICH BANNER FILE DID THE INSTRUCTOR PICK? ---
+# --- only names on the list above count; anything else (blank, typo, nothing chosen) quietly means the default ---
+
+def get_banner_file(details):
+    chosen = (details or {}).get("banner", "")
+    for group_label, banners in BANNER_CHOICES:
+        for file_name, description in banners:
+            if file_name == chosen:
+                return chosen
+    return DEFAULT_BANNER_FILE
+
+# --- THE WEB ADDRESS THE PREVIEW LOADS THE BANNER FROM ---
+
+def banner_preview_url(file_name):
+    return BANNER_PREVIEW_FOLDER + get_banner_file({"banner": file_name})
+
 # --- IT PUTS THE HTML IN THE TEMPLATE OR ELSE IT GETS THE WONKY FILE AGAIN -------------------------------------------
 # --- takes the template text, boxes, content, works out the title, banner, leader ---
-# --- note that some of this is hardcoded right now but will be added as options later ---
 
-def build_page(template, boxes, content, page_leader):
+def build_page(template, boxes, content, page_leader, details=None):
 
     # --- find the page title. Will be the H1 tag on the page ---
     page_title = "Untitled Page"        # in case we don't find one
@@ -994,8 +1029,8 @@ def build_page(template, boxes, content, page_leader):
             page_title = box["text"]
             break                       # okay, we found it, stop looking
 
-    # --- the banner is fixed for now; we'll give options later ---
-    banner = DEFAULT_PAGE_BANNER
+    # --- the banner the instructor picked (or the default) ---
+    banner = BANNER_FOLDER + get_banner_file(details)
 
     # --- the time list goes right after the H1; the 1 at the end means only the first </h1> ---
     content = content.replace("</h1>", "</h1>\n" + page_leader, 1)
@@ -1391,13 +1426,14 @@ def make_finished_page(template, boxes, details=None):
 
     content = boxes_to_content(boxes) + "\n" + make_page_end(details)
     page_leader = make_page_leader(calculate_time_on_task(boxes), details)
-    return build_page(template, boxes, content, page_leader)
+    return build_page(template, boxes, content, page_leader, details)
 
 # --- WHAT TO CALL THE DOWNLOADED FILE: THE PAGE TITLE, LOWERCASE, WITH HYPHENS ---
 # --- "The Beginner's Guide (Test)" becomes the-beginners-guide-test.html ---
 
-def make_file_name(boxes):
+def make_file_name(boxes, details=None):
 
+    details = details or {}                 # the command-line run passes nothing
     title = "page"                          # in case there's no H1
     for box in boxes:
         if box["kind"] == "heading" and box["level"] == 1:
@@ -1415,7 +1451,13 @@ def make_file_name(boxes):
     name = name.strip("-")
     if name == "":
         name = "page"
-    return name + ".html"
+
+    prefix = ""                             # Week 11 becomes W11-, Module 2 becomes M02-; no number, no prefix
+    unit_number = one_line(details.get("unit_number", ""))
+    if unit_number.isdigit() and int(unit_number) > 0:
+        letter = {"Week": "W", "Unit": "U", "Module": "M"}.get(one_line(details.get("unit_type", "")), "W")   # same fallback as the Week line at the bottom of the page
+        prefix = f"{letter}{int(unit_number):02d}-"
+    return prefix + name + ".html"
     
 # --- WHAT THE EDITING TEXT BOX SHOULD SHOW FOR A BOX -------------------------------------------------------------------
 # --- one line per line of the box; list items get a "- " in front, numbered or not (the dropdown decides numbered, and the page counts) ---
