@@ -105,6 +105,11 @@ BANNER_CHOICES = [
         ("gcc_courseoverviewdesk.jpg", "Binder and blank pages on a desk"),
         ("gcc_courseoverviewhallclock.jpg", "Wall clock in a block-wall hallway"),
         ("gcc_courseoverviewhallstairs.jpg", "Stairs with wood handrail"),
+        ("gcc_library.jpg", "Library table with wall sculptures"),
+        ("gcc_groupwork.jpg", "Group work table with lamp"),
+        ("gcc_coursediscussion.jpg", "Library bookstacks and discussion table"),
+        ("gcc_quizdesks.jpg", "Classroom desks set up for an exam"),
+        ("gcc_assignmentdesk.jpg", "Desk with laptop and banker's lamp"),
     ]),
 ]
 
