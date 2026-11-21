@@ -261,6 +261,8 @@ def chunk_it(event):
 
     for number, box in enumerate(boxes, start=1):
         container.appendChild(make_box_frame(number, box))
+        if box["kind"] == "video" and get_video_fields(box)["title"] == "":   # videos found while chunking get their titles looked up too
+            asyncio.ensure_future(fetch_video_title(number))
 
     document.getElementById("result").innerText = f"Found {len(boxes)} boxes. Things to fix: {problems}."
     show_screen("organize")
@@ -268,6 +270,8 @@ def chunk_it(event):
 # --- ask the video site for the title (YouTube and Vimeo only); fill it in if the title box is still empty, say so if the lookup fails ---
 async def fetch_video_title(number):
     box = state["boxes"][number - 1]
+    if find_video(box["text"]) != info:                      # a different video is in this box now (new chunking, new edit); this title isn't for it
+        return
     info = find_video(box["text"])
     lookup_url = video_title_lookup_url(info) if info is not None else None
     if lookup_url is None:                                   # Panopto, or nothing to look up
