@@ -198,6 +198,15 @@ def make_box_frame(number, box):
     edit_button.innerHTML = '<span class="fas fa-fw fa-pencil-alt" aria-hidden="true"></span>'
     edit_button.title = "Edit"                  # the tooltip for mouse users
 
+    delete_button = document.createElement("button")   # throws the whole box away (Undo delete brings it back)
+    delete_button.type = "button"
+    delete_button.id = f"delete-{number}"
+    delete_button.className = "secondary edit-toggle delete-box"   # edit-toggle is only here to borrow the pencil button's look; box_clicked checks delete-box first
+    delete_button.setAttribute("data-box", str(number))
+    delete_button.setAttribute("aria-label", f"Delete box {number}")
+    delete_button.innerHTML = '<span class="fas fa-fw fa-trash-alt" aria-hidden="true"></span>'
+    delete_button.title = "Delete"
+    
     editor = document.createElement("textarea") # hidden until Edit is clicked; holds the box's raw words
     editor.id = f"editor-{number}"
     editor.className = "box-editor"
@@ -219,6 +228,7 @@ def make_box_frame(number, box):
     toolbar.appendChild(picker)
     toolbar.appendChild(callout_picker)
     toolbar.appendChild(edit_button)
+    toolbar.appendChild(delete_button)
     frame.appendChild(toolbar)
     frame.appendChild(preview)
     frame.appendChild(make_video_fields(number, box))   # hidden unless this box is a video
@@ -287,6 +297,7 @@ def chunk_it(event):
         return
 
     state["boxes"] = boxes                                   # remember them so the dropdowns can change them
+    state["deleted"] = None                                  # a fresh chunking means nothing is waiting to be undone
     problems = render_issues(boxes)                          # do we have any issues with link text?
 
     container = document.getElementById("boxes")
@@ -438,15 +449,71 @@ def finish_editing(number):
     document.getElementById("result").innerText = f"{message} Things to fix: {problems}."
     document.getElementById(f"edit-{number}").focus()        # keep the keyboard where it was
 
+# --- THE "UNDO DELETE" LINE: A SMALL BUTTON THAT SITS IN THE COLUMN WHERE THE DELETED BOX USED TO BE ---
+def make_undo_line():
+    line = document.createElement("div")
+    line.className = "undo-line"
+    button = document.createElement("button")
+    button.type = "button"
+    button.id = "undo-delete"
+    button.className = "undo-delete"
+    button.innerText = "Undo delete"
+    line.appendChild(button)
+    return line
+
+# --- DRAW ALL THE BOXES FROM SCRATCH, NUMBERED 1, 2, 3 AGAIN, WITH THE UNDO LINE IN THE GAP IF A BOX WAS JUST DELETED ---
+def render_boxes():
+    container = document.getElementById("boxes")
+    container.innerHTML = ""
+    deleted = state.get("deleted")
+    for number, box in enumerate(state["boxes"], start=1):
+        if deleted and deleted["index"] == number - 1:
+            container.appendChild(make_undo_line())
+        container.appendChild(make_box_frame(number, box))
+    if deleted and deleted["index"] >= len(state["boxes"]):      # the deleted box was the last one
+        container.appendChild(make_undo_line())
+
+# --- DELETE BOX NUMBER N: REMEMBER IT (ONE LEVEL ONLY), TAKE IT OUT, REDRAW ---
+def delete_box(number):
+    if len(state["boxes"]) == 1:
+        document.getElementById("result").innerText = "That's the only box left, so it can't be deleted. Go back to step 1 to start over."
+        return
+    finish_all_editing()                                     # save anybody's half-finished typing before the boxes get redrawn
+    box = state["boxes"].pop(number - 1)
+    state["deleted"] = {"box": box, "index": number - 1}     # a second delete replaces this; only the latest can be undone
+    render_boxes()
+    problems = render_issues(state["boxes"])
+    document.getElementById("result").innerText = f"Box {number} deleted. Things to fix: {problems}. Press Undo delete to bring it back."
+    document.getElementById("undo-delete").focus()           # keyboard focus goes to the undo button, since the delete button just vanished
+
+# --- BRING THE LAST DELETED BOX BACK TO WHERE IT WAS ---
+def undo_delete():
+    deleted = state.get("deleted")
+    if not deleted:
+        return
+    state["boxes"].insert(deleted["index"], deleted["box"])
+    state["deleted"] = None
+    render_boxes()
+    problems = render_issues(state["boxes"])
+    number = deleted["index"] + 1
+    document.getElementById("result").innerText = f"Box {number} is back. Things to fix: {problems}."
+    document.getElementById(f"edit-{number}").focus()
+
 @when("click", "#boxes")
 def box_clicked(event):
     button = event.target
-    if not button.classList.contains("edit-toggle"):         # the click may have landed on the icon inside the button
+    keepers = ("edit-toggle", "delete-box", "undo-delete")  # the buttons whose clicks we care about
+    if not any(button.classList.contains(name) for name in keepers):    # the click may have landed on the icon inside the button
         button = button.parentElement                        # so step up one level: an icon's parent is its button
-        if not button.classList.contains("edit-toggle"):     # still not an Edit / Done button; not our click
+        if not any(button.classList.contains(name) for name in keepers):   # still not one of our buttons; not our click
             return
+    if button.classList.contains("undo-delete"):
+        undo_delete()
+        return
     number = int(button.getAttribute("data-box"))
-    if document.getElementById(f"editor-{number}").hidden:
+    if button.classList.contains("delete-box"):              # checked before edit-toggle, because the delete button borrows that class for its look
+        delete_box(number)
+    elif document.getElementById(f"editor-{number}").hidden:
         start_editing(number)
     else:
         finish_editing(number)
