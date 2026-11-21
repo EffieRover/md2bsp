@@ -27,45 +27,55 @@ HOW TO RUN IT
 
 Live version (nothing to install): https://effierover.github.io/md2bsp/
 
-1. Paste: paste your content into the box and click "Chunk it." Imports are 
-   converted to markdown first (if not already markdown). A video link on a
+1. Paste: paste your content into the box and click "Chunk it." You can copy
+   straight from Word, Google Docs, or a web page; headings, paragraphs, lists,
+   bold, italic, and links come across, and everything else is dropped. Imports
+   are converted to markdown first (if not already markdown). A video link on a
    line by itself becomes a Video box.
    
 2. Organize: check the boxes and the preview. Use the dropdowns to relabel a
-   box, add a callout, or mark accordion titles and accordion content, and the
-   pencil to fix text. For a video, fill in the title and length (the title is
+   box, add a callout, or mark accordion titles and accordion content. The
+   pencil icon allows editing; trash can deletes a box; an undo link appears in
+   the gap where it was. For a video, fill in the title and length (the title is
    looked up for you when the browser allows it). Clear the "Needed Repairs"
    list. Click "Next: Finishing Touches."
    
-3. Finishing Touches: fill in only what applies (reading, video, and activity
+4. Finishing Touches: fill in only what applies (reading, video, and activity
    minutes; before you start; materials needed; key terms; guiding questions;
    working toward; Week, Unit, or Module and its number). The video minutes are
    added up from your video lengths; change them if they are wrong. Click
    "Next: Preview."
    
-4. Preview: look over the simulated page. Accordions show open. Click
-   "Download," then upload the file to Brightspace.
+5. Preview: look over the simulated page. Accordions show open. Pick a banner
+   from the Banner menu in the right-hand column. Click "Download," then upload
+   the file to Brightspace. The file name starts with W, U, or M and the number
+   if you chose a Week, Unit, or Module (W11-title-of-page.html).
 
 
 FILES
 
-index.html           the web page (the four screens)
-style.css            how the page looks; uses Lato
-main.py              the web page's behavior (buttons, boxes, screens, download)
-md2bsp_web.py        the engine: cleaning, chunking, boxes, HTML, issues, page
-pyscript.toml        tells PyScript where to find md2bsp_web.py and the template
-template_gcc.html    the GCC page template the finished page is built in
-preview_banner.jpg   a stand-in banner image used only in the preview
-fonts/               Lato web fonts and its license (SIL Open Font License)
-LICENSE              MIT license, with a note about the GCC template and branding
-README               this file
-Not in the repo: input.md (test input)
+- index.html           the web page (the four screens)
+- style.css            how the page looks; uses Lato
+- main.py              the web page's behavior (buttons, boxes, screens, download)
+- md2bsp_web.py        the engine: cleaning, chunking, boxes, HTML, issues, page
+- pyscript.toml        tells PyScript where to find md2bsp_web.py and the template
+- template_gcc.html    the GCC page template the finished page is built in
+- preview_banner.jpg   a stand-in banner image used only if regulars can't be loaded
+- fonts/               Lato web fonts and its license (SIL Open Font License)
+- gcc_banners/         Temporary repository of GCC images
+- LICENSE              MIT license, with a note about the GCC template and branding
+- README               this file
+- Not in the repo: input.md (test input)
 
 
 KNOWN ISSUES
 
-1. Tabs, tables, blockquotes, and images are not built yet. Formatting from
-   Word or a web page is not converted; paste plain text or markdown.
+1. Tabs, tables, blockquotes, and images are not built yet. Pasting from Word,
+   Google Docs, or a web page keeps only headings, paragraphs, lists, bold, italic,
+   and http/https links. Colors, fonts, and sizes are dropped. Images are left out
+   (the tool says so). Tables become one paragraph per row, with | between cells.
+   Nested lists are flattened. Headings below H4 become H4. Bold and italic together
+   comes out bold only. Copying from a code editor is left as plain text.
 2. Clicking Back to step 1 and chunking again rebuilds the boxes from the
    original pasted text, so relabels and edits made on the Organize screen are
    lost. (Going back from Preview or Finishing Touches keeps them.)
@@ -113,6 +123,13 @@ CHANGES FROM PLAN
   and the bottom-of-page line (Week/Unit/Module and Last published).
 - Added: Preview (with a stand-in banner and the template's margins) and
   Download.
+- Added: paste conversion. Copied Word, Google Docs, and web content becomes
+  markdown before it is chunked.
+- Added: a delete button on each box, with a one-level Undo delete.
+- Added: a banner menu on Preview, with groups for SUNY defaults and GCC banners.
+  The download uses the one you pick.
+- Added: the downloaded file name starts with W, U, or M and the number (W11-,
+  M02-) when a Week, Unit, or Module is chosen.
 - Changed: a bare link used to become "missing text." It now becomes the site
   name, and the tool flags it until a human writes better words.
 - Changed: headings stop at H4. Deeper headings become H4.
@@ -123,7 +140,8 @@ CHANGES FROM PLAN
 
 LIBRARIES AND OTHER MATERIALS
 
-- Python standard library: asyncio, datetime, html, math, os, sys, urllib.parse
+- Python standard library: asyncio, datetime, html, math, os, re, sys, urllib
+- Banner images are temporarily hosted by GitHub
 - PyScript (Pyodide), release 2025.10.3, runs the Python in the browser; its
   pyfetch function looks up video titles
 - Font Awesome 5.9.0 (free), loaded from cdnjs, for the link, callout, video,
