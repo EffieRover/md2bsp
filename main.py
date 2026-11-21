@@ -109,12 +109,12 @@ def show_screen(name):
     document.getElementById(screen["focus"]).focus()    # the button that had focus just vanished, so hand focus to the new screen
     window.scrollTo(0, 0)                       # focusing a tall element scrolls the page; put it back at the top
 
-# --- the three little fields under a video box: title, length, language; they stay hidden unless the box is a video ---
-def make_video_fields(number):
+def make_video_fields(number, box):
+    saved = get_video_fields(box)
     wrapper = document.createElement("div")
     wrapper.id = f"video-fields-{number}"
     wrapper.className = "video-fields"
-    wrapper.hidden = True
+    wrapper.hidden = box["kind"] != "video"      # no page lookups here; the box isn't on the page yet
     for name, label_text in [("title", "Video title"), ("length", "Length (mm:ss)"), ("language", "Language")]:
         piece = document.createElement("div")
         piece.className = f"video-field-{name}"
@@ -126,6 +126,7 @@ def make_video_fields(number):
         field.id = f"video-{name}-{number}"
         field.className = "video-field"
         field.setAttribute("data-box", str(number))
+        field.value = saved[name]
         piece.appendChild(label)
         piece.appendChild(field)
         wrapper.appendChild(piece)
@@ -217,8 +218,7 @@ def make_box_frame(number, box):
     toolbar.appendChild(edit_button)
     frame.appendChild(toolbar)
     frame.appendChild(preview)
-    frame.appendChild(make_video_fields(number))        # hidden unless this box is a video
-    fill_video_fields(number, box)
+    frame.appendChild(make_video_fields(number, box))   # hidden unless this box is a video
     frame.appendChild(hint)
     frame.appendChild(editor)
     return frame
@@ -270,8 +270,6 @@ def chunk_it(event):
 # --- ask the video site for the title (YouTube and Vimeo only); fill it in if the title box is still empty, say so if the lookup fails ---
 async def fetch_video_title(number):
     box = state["boxes"][number - 1]
-    if find_video(box["text"]) != info:                      # a different video is in this box now (new chunking, new edit); this title isn't for it
-        return
     info = find_video(box["text"])
     lookup_url = video_title_lookup_url(info) if info is not None else None
     if lookup_url is None:                                   # Panopto, or nothing to look up
@@ -283,16 +281,21 @@ async def fetch_video_title(number):
     except Exception:                                        # blocked by the browser, no internet, video not found...
         document.getElementById("result").innerText = f"Box {number}: couldn't get the title from the video site. Please type it in."
         return
-    box = state["boxes"][number - 1]                         # the box may have changed while we waited; look again
-    fields = get_video_fields(box)
-    if box["kind"] != "video" or fields["title"] != "":      # no longer a video, or the instructor already typed one
-        return
-    new_box = set_box_video(box, title, fields["length"], fields["language"])
-    state["boxes"][number - 1] = new_box
-    fill_video_fields(number, new_box)
-    document.getElementById(f"preview-{number}").innerHTML = box_to_html(new_box)
-    render_issues(state["boxes"])
-    document.getElementById("result").innerText = f"Box {number}: video title filled in. Check that it's right."
+    try:
+        box = state["boxes"][number - 1]                     # the box may have changed while we waited; look again
+        if find_video(box["text"]) != info:                  # a different video is in this box now; this title isn't for it
+            return
+        fields = get_video_fields(box)
+        if box["kind"] != "video" or fields["title"] != "":  # no longer a video, or the instructor already typed a title
+            return
+        new_box = set_box_video(box, title, fields["length"], fields["language"])
+        state["boxes"][number - 1] = new_box
+        fill_video_fields(number, new_box)
+        document.getElementById(f"preview-{number}").innerHTML = box_to_html(new_box)
+        render_issues(state["boxes"])
+        document.getElementById("result").innerText = f"Box {number}: video title filled in. Check that it's right."
+    except Exception as problem:                             # if anything goes wrong placing the title, say what
+        document.getElementById("result").innerText = f"Box {number}: got the title but couldn't place it ({problem})."
 
 # --- typing in a video field: save it into the box right away (the preview waits until you leave the field, so the video doesn't reload on every keystroke) ---
 @when("input", "#boxes")
