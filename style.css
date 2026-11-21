@@ -655,3 +655,20 @@ aside.card:focus-visible {
     font-size: 0.75em;
     margin-left: 0.35em;
 }
+
+/* ---------- The banner picker in the right-hand column: styled like the box dropdowns ---------- */
+.banner-area {
+  margin-bottom: 24px;
+}
+
+.banner-area select {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 6px 10px;
+  color: var(--text);
+  background: #ffffff;
+  border: 1px solid var(--field-border);
+  border-radius: 4px;
+}
