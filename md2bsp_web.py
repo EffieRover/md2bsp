@@ -883,6 +883,33 @@ def video_title_lookup_url(info):
         return "https://vimeo.com/api/oembed.json?url=" + direct
     return None
 
+# --- "3:29" OR "1:02:03" BECOMES A NUMBER OF SECONDS; ANYTHING ELSE COMES BACK AS None ---
+
+def length_to_seconds(text):
+
+    pieces = text.strip().split(":")
+    if len(pieces) not in (2, 3) or not all(piece.isdigit() for piece in pieces):
+        return None
+    numbers = [int(piece) for piece in pieces]
+    if any(number >= 60 for number in numbers[1:]):        # minutes after hours and seconds after minutes stop at 59
+        return None
+    seconds = 0
+    for number in numbers:
+        seconds = seconds * 60 + number
+    return seconds
+
+# --- ADD UP EVERY VIDEO'S TYPED LENGTH AND ROUND UP TO WHOLE MINUTES (0 IF THERE'S NOTHING TO ADD) ---
+
+def calculate_video_minutes(boxes):
+
+    total_seconds = 0
+    for box in boxes:
+        if box["kind"] == "video":
+            seconds = length_to_seconds(get_video_fields(box)["length"])
+            if seconds is not None:
+                total_seconds += seconds
+    return math.ceil(total_seconds / 60)
+
 # --- A VIDEO BOX REMEMBERS ITS TITLE, LENGTH AND LANGUAGE IN box["video"]; UNTOUCHED FIELDS HAVE DEFAULTS ---
 
 def get_video_fields(box):
@@ -1045,6 +1072,16 @@ def find_issues(boxes):
 
     issues = []                                     # pairs of (box number, sentence) so we can sort them at the end
     for number, box in enumerate(boxes, start=1):   # people count from 1, not 0
+        if box["kind"] == "video":                  # videos need a title and a length; their links are handled elsewhere
+            fields = get_video_fields(box)
+            length = fields["length"].strip()
+            if fields["title"].strip() == "":
+                issues.append((number, f"Box {number}: video needs a title (it names the video for screen readers and is the link text)."))
+            if length == "":
+                issues.append((number, f"Box {number}: video needs a length, like 3:29."))
+            elif length_to_seconds(length) is None:
+                issues.append((number, f"Box {number}: video length ({length}) should look like 3:29 (minutes:seconds)."))
+            continue
         if box["kind"] == "paragraph":
             texts = [box["text"]]
         elif box["kind"] == "list":
