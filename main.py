@@ -279,7 +279,7 @@ def render_issues(boxes):
     issue_list.innerHTML = ""                   # empty out the old list first
     if not issues:
         item = document.createElement("li")
-        item.innerText = "Nothing to fix."
+        item.innerText = "Your page has passed all the checks this app offers; there may be additional considerations, please check WCAG and OSCQR."
         issue_list.appendChild(item)
     for sentence in issues:
         item = document.createElement("li")
