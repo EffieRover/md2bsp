@@ -1580,11 +1580,11 @@ def find_issues(boxes):
             fields = get_video_fields(box)
             length = fields["length"].strip()
             if fields["title"].strip() == "":
-                issues.append((number, f"Box {number}: video needs a title (it names the video for screen readers and is the link text)."))
+                issues.append((number, f"Box {number}: video needs a title (WCAG 4.1.2, 2.4.1)"))
             if length == "":
-                issues.append((number, f"Box {number}: video needs a length, like 3:29."))
+                issues.append((number, f"Box {number}: video needs a length, like 3:29 (GCC)"))
             elif length_to_seconds(length) is None:
-                issues.append((number, f"Box {number}: video length ({length}) should look like 3:29 (minutes:seconds)."))
+                issues.append((number, f"Box {number}: video length ({length}) should look like 3:29 (minutes:seconds)"))
             continue
         if box["kind"] == "paragraph":
             texts = [box["text"]]
@@ -1596,26 +1596,26 @@ def find_issues(boxes):
         for text in texts:
             for link_text, url in find_links(text):
                 if link_text_is_weak(link_text, url):
-                    issues.append((number, f"Box {number}: link ({url}) is missing descriptive text."))
+                    issues.append((number, f"Box {number}: link is missing descriptive text (WCAG 2.4.4, OSCQR 37)"))
 
     for start, end in find_accordion_runs(boxes):   # accordions: every title needs content, every content needs a title
         for index in range(start, end):
             number = index + 1
             dressing = boxes[index].get("dressing", "")
             if dressing == "accordion-content" and index == start:
-                issues.append((number, f"Box {number}: accordion content has no accordion title above it. "
-                                       "Mark a heading above it as Accordion title, or set this box back to None."))
+                issues.append((number, f"Box {number}: accordion content has no accordion title above it; "
+                                       "Mark a heading above it as Accordion title, or set this box back to None"))
             if dressing == "accordion-title":
                 if index + 1 < end and boxes[index + 1].get("dressing") == "accordion-title":
-                    issues.append((number, f"Box {number}: accordion title has no content before the next title. "
-                                           "Mark a box under it as Accordion content."))
+                    issues.append((number, f"Box {number}: accordion title has no content before the next title; "
+                                           "Mark a box under it as Accordion content"))
                 elif index + 1 == end:
                     next_dressing = boxes[end].get("dressing", "") if end < len(boxes) else ""
                     if next_dressing != "":
-                        issues.append((number, f"Box {number}: accordion title is followed by a callout, which can't be accordion content. "
-                                               "Move the callout, or set it back to None."))
+                        issues.append((number, f"Box {number}: accordion title is followed by a callout, which can't be accordion content; "
+                                               "Move the callout, or set it back to None"))
                     else:
-                        issues.append((number, f"Box {number}: accordion title has no content under it. "
+                        issues.append((number, f"Box {number}: accordion title has no content under it; "
                                                "Mark the box below it as Accordion content, or set this one back to None."))
 
     issues.sort(key=lambda pair: pair[0])           # sort() keeps ties in the order we added them
@@ -1714,3 +1714,4 @@ if __name__ == "__main__":
     write_file(OUTPUT_FILE, finished_page)
 
     print(f"Saved {OUTPUT_FILE}")               # --- Sanity check: did we make it? ---
+
