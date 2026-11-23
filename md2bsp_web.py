@@ -121,7 +121,7 @@ BANNER_CHOICES = [
         ("gcc_studyclosedlaptop.jpg", "Closed laptop, lamp, mug and pencils on a desk"),
         ("gcc_studying.jpg", "Cluttered study table with notes and a snack"),
         ("gcc_studyopenbook.jpg", "Open notebook and highlighted books on a desk"),
-        ("gcc_technotesspace.jpg", "Laptop, tablet and headphones on a wood desk"),
+        ("gcc_technotesspace.jpg", "Laptop, tablet and headphones on a desk"),
         ("gcc_writingnailpolish.jpg", "Hands writing in a spiral notebook"),
         ("gcc_writingnovember.jpg", "Hands typing beside a planner and pumpkin"),
         ("gcc_writingpen.jpg", "Blank paper with a red pen"),
