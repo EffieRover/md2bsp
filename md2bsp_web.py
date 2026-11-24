@@ -1607,6 +1607,13 @@ def find_links(text):
 def find_issues(boxes):
 
     issues = []                                     # pairs of (box number, sentence) so we can sort them at the end
+    
+    h1_numbers = [n for n, b in enumerate(boxes, start=1) if b["kind"] == "heading" and b["level"] == 1]
+    if boxes and len(h1_numbers) == 0:              # no H1 means the page title falls back to "Untitled Page"
+        issues.append((0, "Page: needs a title, a Heading 1 at the top (OSCQR 21)"))
+    for number in h1_numbers[1:]:                   # the first H1 is the title; every extra one gets flagged
+        issues.append((number, f"Box {number}: only one Heading 1 per page, make this a Heading 2 (OSCQR 21)"))
+        
     for number, box in enumerate(boxes, start=1):   # people count from 1, not 0
         if box["kind"] == "video":                  # videos need a title and a length; their links are handled elsewhere
             fields = get_video_fields(box)
