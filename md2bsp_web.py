@@ -172,6 +172,16 @@ CALLOUT_CHOICES = [
     ("reminder", "Callout Reminder", "fa-bell"),
 ]
 
+# --- VAGUE LINK CHOICES: Don't fucking use these, you dolts ---
+
+VAGUE_LINK_PHRASES = {
+    "click", "click here", "click this", "click this link", "click the link", "click on this link",
+    "here", "right here", "go here", "tap here", "see here", "visit here",
+    "link", "this link", "the link", "a link", "link here", "this",
+    "read more", "learn more", "more", "more info", "more information", "info", "details", "see more",
+    "this page", "this website", "this site", "website", "web site", "url", "continue", "go",
+}
+
 # --- READING THE INPUT FILE ------------------------------------------------------------------------------------------
 # --- Read a text file, file_name, and return everything in it as one piece of text ---
 # --- with open ... opens the file and closes it when we're done; utf-8 tells py how to read special characters ---
@@ -644,9 +654,16 @@ def plain_link_text(text):
 # --- IS THIS LINK TEXT USELESS TO A HUMAN? ---------------------------------------------------------------------------
 # --- yes if it's empty, says "missing text", or is just the site name or web address; that's a link that doesn't say where it goes ---
 
+def vague_link_key(text):
+
+    words = re.sub(r"[^a-z0-9 ]", " ", text.lower()).split()    # lowercase, drop punctuation, squeeze spaces
+    return " ".join(words)
+
 def link_text_is_weak(text, url):
 
     plain = plain_link_text(text)
+    if vague_link_key(text) in VAGUE_LINK_PHRASES:
+        return True
     return plain in ("", "missing text", domain_label(url), plain_link_text(url))
 
 # --- TURN BARE URLS INTO PROPER MARKDOWN LINKS -----------------------------------------------------------------------
