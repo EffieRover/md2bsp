@@ -1628,7 +1628,7 @@ def find_issues(boxes):
         for text in texts:
             for link_text, url in find_links(text):
                 if link_text_is_weak(link_text, url):
-                    issues.append((number, f"Box {number}: link is missing descriptive text (WCAG 2.4.4, OSCQR 37)"))
+                    issues.append((number, f"Box {number}: link is missing descriptive text (WCAG 2.4.9, OSCQR 37)"))
 
     for start, end in find_accordion_runs(boxes):   # accordions: every title needs content, every content needs a title
         for index in range(start, end):
