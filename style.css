@@ -133,6 +133,12 @@ textarea {
   border-radius: 6px;
 }
 
+/* the front-page paste box: nearly the full window. The 460px is everything around it: top bars, heading, label, help sentences, bottom padding. Tune it. */
+#markdown-input {
+  height: calc(100vh - 460px);
+  min-height: 360px;
+}
+
 /* -- formatting for the box text during organize -- */
 .box-text {
   margin: 0;
