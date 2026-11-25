@@ -678,6 +678,9 @@ def structure_bare_urls(text):
     text = text.replace("( http", "(http")      # clean up moar extra spaces
     text = text.replace(" )", ")")              # clean up the other white spaces
 
+    text = re.sub(r"\[\s*\d+\s*\]\((https?://[^)\s]*)\)",       # a link whose text is only a number, like [1](url)
+    lambda m: f"[{domain_label(m.group(1))}]({m.group(1)})", text)   # gets the site-name placeholder, same as a bare url
+    
     for line in text.splitlines():              # for each line in the file
         words = line.split(" ")                 # chop the line into words
 
