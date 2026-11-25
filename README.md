@@ -29,16 +29,18 @@ The goal is consistent, standardized pages free of clutter, easily dressed up as
 
 ### Live version (nothing to install): https://effierover.github.io/md2bsp/
 
-Paste: paste your content into the box and click "Chunk it." You can copy straight from Word, Google Docs, or a web page; headings, paragraphs, lists, bold, italic, and links come across, and everything else is dropped. Imports are converted to markdown first (if not already markdown). A video link on a line by itself becomes a Video box.
-Organize: check the boxes and the preview. Use the dropdowns to relabel a box, add a callout, or mark accordion titles and accordion content. The pencil icon allows editing; the trash can deletes a box, and an undo link appears in the gap where it was. For a video, fill in the title and length (the title is looked up for you when the browser allows it). Clear the "Needed Repairs" list. Click "Next: Finishing Touches."
-Finishing Touches: fill in only what applies (reading, video, and activity minutes; before you start; materials needed; key terms; guiding questions; working toward; Week, Unit, or Module and its number). The video minutes are added up from your video lengths; change them if they are wrong. Click "Next: Preview."
-Preview: look over the simulated page. Accordions show open. Pick a banner from the Banner menu in the right-hand column. Click "Download," then upload the file to Brightspace. The file name starts with W, U, or M and the number if you chose a Week, Unit, or Module (W11-title-of-page.html).
-What "Needed Repairs" checks
-Links: text that is empty, only the site name or web address, a vague phrase ("click here," "here," "read more"), or only a number like [1]. A bare web address becomes a site-name placeholder, and the tool flags it until a human writes better words.
-Headings: no Heading 1, more than one Heading 1, and skipped levels (a Heading 2 followed by a Heading 4).
-Bold lines that look like headings: a paragraph that is nothing but one bold phrase.
-Accordions: every title needs content, and every content box needs a title.
-Videos: every video needs a title and a length typed like 3:29.
+1. Paste: paste your content into the box and click "Chunk it." You can copy straight from Word, Google Docs, or a web page; headings, paragraphs, lists, bold, italic, and links come across, and everything else is dropped. Imports are converted to markdown first (if not already markdown). A video link on a line by itself becomes a Video box.
+2. Organize: check the boxes and the preview. Use the dropdowns to relabel a box, add a callout, or mark accordion titles and accordion content. The pencil icon allows editing; the trash can deletes a box, and an undo link appears in the gap where it was. For a video, fill in the title and length (the title is looked up for you when the browser allows it). Clear the "Needed Repairs" list. Click "Next: Finishing Touches."
+3. Finishing Touches: fill in only what applies (reading, video, and activity minutes; before you start; materials needed; key terms; guiding questions; working toward; Week, Unit, or Module and its number). The video minutes are added up from your video lengths; change them if they are wrong. Click "Next: Preview."
+4. Preview: look over the simulated page. Accordions show open. Pick a banner from the Banner menu in the right-hand column. Click "Download," then upload the file to Brightspace. The file name starts with W, U, or M and the number if you chose a Week, Unit, or Module (W11-title-of-page.html).
+
+### What "Needed Repairs" checks
+
+- Links: text that is empty, only the site name or web address, a vague phrase ("click here," "here," "read more"), or only a number like [1]. A bare web address becomes a site-name placeholder, and the tool flags it until a human writes better words.
+- Headings: no Heading 1, more than one Heading 1, and skipped levels (a Heading 2 followed by a Heading 4).
+- Bold lines that look like headings: a paragraph that is nothing but one bold phrase.
+- Accordions: every title needs content, and every content box needs a title.
+- Videos: every video needs a title and a length typed like 3:29.
 
 ### Running the engine from the command line
 
