@@ -42,6 +42,8 @@ for value, label, icon_class in CALLOUT_CHOICES:
     CALLOUT_LABELS[value] = label
 CALLOUT_LABELS["accordion-title"] = "Accordion title"
 CALLOUT_LABELS["accordion-content"] = "Accordion content"
+CALLOUT_LABELS["tab-title"] = "Tab title"
+CALLOUT_LABELS["tab-content"] = "Tab content"
 
 # --- shortcut: hide or show one thing on the page, found by its id ---
 def set_hidden(element_id, is_hidden):
@@ -221,7 +223,7 @@ def make_box_frame(number, box):
     picker.id = f"type-{number}"                # ids so the edit code can find this box's pieces again
     
     callout_picker = document.createElement("select")   # the dressing dropdown: callouts and accordion pieces
-    callout_picker.setAttribute("aria-label", f"Callout or accordion for box {number}")
+    callout_picker.setAttribute("aria-label", f"Callout, accordion or tab for box {number}")
     callout_picker.setAttribute("data-box", str(number))
     callout_picker.id = f"callout-{number}"             # keeps its old id so the rest of the code still finds it
     fill_dressing_picker(callout_picker, box)
@@ -425,11 +427,14 @@ def type_changed(event):
     if not picker.id.startswith("callout-") and picker.value == "video":      # the type dropdown just chose Video
         if get_video_fields(new_box)["title"] == "":
             asyncio.ensure_future(fetch_video_title(number))                  # runs in the background; the page keeps working
-    if picker.id.startswith("callout-") and picker.value == "accordion-title":    # a title was just chosen
-        if mark_content_after_title(state["boxes"], number - 1):                  # the box under it was undressed
+
+    if picker.id.startswith("callout-") and picker.value in ("accordion-title", "tab-title"):    # a title was just chosen
+        content_name = "accordion-content" if picker.value == "accordion-title" else "tab-content"
+        if mark_content_after_title(state["boxes"], number - 1, content_name):   # the box under it was undressed
             next_number = number + 1
-            document.getElementById(f"callout-{next_number}").value = "accordion-content"   # show it in that box's dropdown
-            message += f" Box {next_number} was marked as Accordion content."
+            document.getElementById(f"callout-{next_number}").value = content_name   # show it in that box's dropdown
+            message += f" Box {next_number} was marked as {CALLOUT_LABELS[content_name]}."
+    
     render_issues(state["boxes"])                            # a change can change what needs fixing
     document.getElementById(f"preview-{number}").innerHTML = box_to_html(new_box)
     document.getElementById("result").innerText = message
