@@ -1,57 +1,16 @@
 """
-md2bsp_web.py -- Builds a finished Brightspace web page, given content pieces
+md2bsp_web.py -- the engine for MD2BSP (Markdown to Brightspace)
 
-WHAT IT DOES:
-    Reads a file of markdown text, and converts that markdown into the appropriate HTML sequences to be included in Brightspace. 
-    Then it wraps those sequences in the standard GCC template and Bob's your uncle. Note: it works on a multi-step process 
-    because I want the instructor to be able to check some things and clean some things up before it goes out.
-    Words I use: a CHUNK is a piece of the raw text (a heading, a paragraph, a list).
-                 a BOX is a chunk after the program has decided what it is and labeled it.
-                 a DRESSING is something a box wears: a callout, or an accordion title or accordion content. The box
-                 underneath stays what it was (a list stays a list); the dressing only changes how it is shown.
-    Phase 1: pull apart the input file into chunks and put each chunk in a labeled box
-        Phase 1.1 (done, on the web page): the instructor can relabel boxes, fix typos and links, dress a box up as a callout,
-            mark boxes as accordion titles and accordion content, and turn a video link into a video box
-        Phase 1.2 (done, on the web page): a Finishing Touches screen asks for reading, video, and activity minutes, materials needed, 
-            key terms, guiding questions, and Week/Unit/Module (video minutes are added up from the video boxes)
-    Phase 2: convert those boxes into HTML
-    Phase 3: drop the HTML into the template file and save it (on the web page, Download does this)
+Turns pasted markdown into a finished Brightspace page in the GCC template, in three phases:
+    Phase 1: split the pasted text into chunks and label each one as a box (text_to_boxes); the instructor fixes them on the web page
+    Phase 2: convert the boxes into HTML (boxes_to_content)
+    Phase 3: drop the HTML into the template (build_page); on the web page, Download does this
 
-    This file is the engine. main.py and index.html run it in the browser through PyScript:
-    https://effierover.github.io/md2bsp/
+main.py and index.html run this file in the browser through PyScript: https://effierover.github.io/md2bsp/
 
-HOW TO RUN IT (engine only, from the command line):
-    1. Keep template_gcc.html in the same folder as this file.
-    2. Keep input.md in the same folder as this file.
-    3. Run: python md2bsp_web.py 
-    4. Open output.html and look inside it. 
-
-KNOWN ISSUES:
-    1. The command-line run only reads and outputs fixed file names
-    2. Numbered lists must start with 1. and a space
-    3. Bulleted lists must start with either * or - and a space
-    4. Does not manage nested lists
-    5. ***both*** writes crossed tags that Brightspace quietly corrects
-    6. Headings deeper than H4 (##### and ######) become H4
-    7. Links inside headings are not turned into links or checked
-    8. Only http:// and https:// links are recognized; a web address ending in ) can be cut short
-    9. A heading glued to its paragraph with no blank line stays one heading box
-    10. Underscores for italics are not supported (asterisks only)
-    11. Going Back to step 1 on the web page erases relabels and edits
-    12. If any piece of an accordion is set up wrongly, the whole stretch of accordion boxes comes out as plain boxes
-    13. Panopto videos are recognized only on panopto.com addresses; video lengths are always typed, and titles are
-        looked up (by main.py) for YouTube and Vimeo only
-
-TODO:
-    1. Tabs and blockquotes (dressing up boxes the way callouts and accordions do), then tables and images
-    2. Accept uploaded markdown and Word files; convert pasted Word and web formatting (keep headings, paragraphs,
-       lists, bold, italic, and links; drop the rest; flatten tables)
-    3. Start the suggestion engine ... suggest callouts, accordions, tabs
-    4. A Best Practices review step: missing closings, skipped heading levels, image alt text, a heading with nothing under it,
-       an accordion lead-in
-    5. Carry relabels and edits back when the instructor goes Back to step 1
-    6. A generic template for people outside GCC
-
+Everything else lives in README.md and ONLY there, so there's one place to keep up to date:
+what the tool does, how to use it, what the words CHUNK, BOX and DRESSING mean, the file list,
+how to run the engine from the command line, known issues, and what's planned.
 """
 
 # --- IMPORTS ---------------------------------------------------------------------------------------------------------
