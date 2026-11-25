@@ -12,21 +12,22 @@ Faculty can also dress each box up as a callout, an accordion, or a video. A las
 
 The goal is consistent, standardized pages free of clutter, easily dressed up as key points or logical organizations, instead of one-off copy-and-pasted conversions. Students get pages built the same way every time, and instructors and instructional designers get a quick path to making them. Other campuses can adapt the tool to their own template (see TEMPLATE_VARIABLES.md).
 
-Words this project uses
+### Words this project uses
 
-Chunk: a piece of the raw text (a heading, a paragraph, a list).
-Box: a chunk after the program has decided what it is and labeled it. This is what you see and fix on the Organize screen.
-Dressing: something a box wears: a callout, or an accordion title or accordion content. The box underneath stays what it was (a list stays a list); the dressing only changes how it is shown.
-Needed Repairs: the list of things the tool thinks you should fix before you download.
+- Chunk: a piece of the raw text (a heading, a paragraph, a list).
+- Box: a chunk after the program has decided what it is and labeled it. This is what you see and fix on the Organize screen.
+- Dressing: something a box wears: a callout, or an accordion title or accordion content. The box underneath stays what it was (a list stays a list); the dressing only changes how it is shown.
+- Needed Repairs: the list of things the tool thinks you should fix before you download.
 
-How it works
+### How it works
 
-Phase 1: pull the pasted text apart into chunks and put each chunk in a labeled box. The instructor can relabel boxes, fix typos and links, dress a box up as a callout, mark boxes as accordion titles and accordion content, and turn a video link into a video box. A Finishing Touches screen collects reading, video, and activity minutes, materials needed, key terms, guiding questions, and Week/Unit/Module.
-Phase 2: convert the boxes into HTML.
-Phase 3: drop the HTML into the template file and save it. On the web page, Download does this.
-How to use it
+- Phase 1: pull the pasted text apart into chunks and put each chunk in a labeled box. The instructor can relabel boxes, fix typos and links, dress a box up as a callout, mark boxes as accordion titles and accordion content, and turn a video link into a video box. A Finishing Touches screen collects reading, video, and activity minutes, materials needed, key terms, guiding questions, and Week/Unit/Module.
+- Phase 2: convert the boxes into HTML.
+- Phase 3: drop the HTML into the template file and save it. On the web page, Download does this.
 
-## Live version (nothing to install): https://effierover.github.io/md2bsp/
+## How to use it
+
+### Live version (nothing to install): https://effierover.github.io/md2bsp/
 
 Paste: paste your content into the box and click "Chunk it." You can copy straight from Word, Google Docs, or a web page; headings, paragraphs, lists, bold, italic, and links come across, and everything else is dropped. Imports are converted to markdown first (if not already markdown). A video link on a line by itself becomes a Video box.
 Organize: check the boxes and the preview. Use the dropdowns to relabel a box, add a callout, or mark accordion titles and accordion content. The pencil icon allows editing; the trash can deletes a box, and an undo link appears in the gap where it was. For a video, fill in the title and length (the title is looked up for you when the browser allows it). Clear the "Needed Repairs" list. Click "Next: Finishing Touches."
@@ -38,7 +39,8 @@ Headings: no Heading 1, more than one Heading 1, and skipped levels (a Heading 2
 Bold lines that look like headings: a paragraph that is nothing but one bold phrase.
 Accordions: every title needs content, and every content box needs a title.
 Videos: every video needs a title and a length typed like 3:29.
-Running the engine from the command line
+
+### Running the engine from the command line
 
 Only the engine runs this way, not the web page.
 
@@ -83,7 +85,7 @@ The "Last published" date comes from the browser's clock.
 The web page needs an internet connection (PyScript, Font Awesome, the fonts, and the video title lookup load from the web).
 The command-line run only reads and writes fixed file names (template_gcc.html, input.md, output.html).
 
-Planned
+### Planned
 
 Campus codes, so another campus can open index.html?campus=gcc (or its own code) and get its own template. What happens when the code is missing or unknown has not been decided.
 Tabs, blockquotes, tables, and images (with an image alt text check), and file upload.
@@ -93,7 +95,7 @@ A suggestion engine that suggests callouts, accordions, and tabs.
 Carrying relabels and edits back when the instructor goes Back to step 1.
 A generic template for people outside GCC.
 
-Changes from plan
+### Changes from plan
 
 Added: the Organize screen with a type dropdown, a live preview, and an Edit/Done button on each box, plus the "Needed Repairs" list, which stays in view as you scroll.
 Added: a callout dropdown. A callout dresses up an existing box (a list stays a list) in a blue card with an icon, picked from eight choices.
