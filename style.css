@@ -678,3 +678,52 @@ aside.card:focus-visible {
   border: 1px solid var(--field-border);
   border-radius: 4px;
 }
+
+
+/* TABS IN THE PREVIEW: THE APP DOESN'T HAVE BOOTSTRAP, SO WE IMITATE IT; EVERY PANEL SHOWS, STACKED, LIKE BRIGHTSPACE'S EDITING VIEW */
+/* the colors are the app's own: --blue (the nav bar blue), --page (the light gray), --rule (the thin borders) */
+.preview .tabs-wrapper {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 1em 0;
+}
+
+.preview .list-group {
+    display: flex;
+    flex-direction: row;
+    text-align: center;
+}
+
+.preview .list-group-item {
+    flex: 1 1 0;
+    padding: 22px 12px;
+    font-weight: 700;
+    color: inherit;                         /* the preview's own gray text */
+    background: var(--page);
+    border-left: 1px solid var(--rule);
+}
+
+.preview .list-group-item:first-child {
+    border-left: 0;
+}
+
+.preview .list-group-item.active {
+    color: #ffffff;                         /* white on --blue; the finished page does this, and Brightspace's editing view shows dark text instead */
+    background: var(--blue);
+}
+
+.preview .tab-pane {
+    padding: 24px 30px;
+    background: #ffffff;
+    border-top: 1px solid var(--rule);
+}
+
+.preview .tab-pane > :first-child { margin-top: 0; }
+.preview .tab-pane > :last-child { margin-bottom: 0; }
+
+@media (max-width: 767px) {                 /* narrow windows stack the tab labels, like flex-md-row does */
+    .preview .list-group { flex-direction: column; }
+    .preview .list-group-item { border-left: 0; border-top: 1px solid var(--rule); }
+    .preview .list-group-item:first-child { border-top: 0; }
+}
