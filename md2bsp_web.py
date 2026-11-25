@@ -1694,8 +1694,8 @@ def find_issues(boxes):
             continue
         if box["kind"] == "paragraph":
             texts = [box["text"]]
-        if looks_like_fake_heading(box["text"]):
-            issues.append((number, f"Box {number}: this bold line looks like a heading; change its type to a Heading (OSCQR 21)"))
+            if looks_like_fake_heading(box["text"]):
+                issues.append((number, f"Box {number}: this bold line looks like a heading; change its type to a Heading (OSCQR 21)"))
         elif box["kind"] == "list":
             texts = box["items"]
         else:
