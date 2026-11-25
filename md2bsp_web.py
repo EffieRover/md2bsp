@@ -1167,13 +1167,14 @@ def set_box_callout(box, callout_name):
 
 def dressing_choices(box):
 
-    choices = [("", "None")]
     if box["kind"] == "heading":
         choices.append(("accordion-title", "Accordion Title"))
+        choices.append(("tab-title", "Tab Title"))
     else:
         for name, label, icon_class in CALLOUT_CHOICES:
             choices.append((name, label))
     choices.append(("accordion-content", "Accordion Content"))
+    choices.append(("tab-content", "Tab Content"))
     return choices
 
 def keep_valid_dressing(box):
@@ -1258,17 +1259,95 @@ def make_accordion_html(run_boxes):
         '<!-- accordion end -->'
     )
 
+# --- TABS: A STRETCH OF CONSECUTIVE TAB-MARKED BOXES BECOMES ONE TAB SET, THE SAME IDEA AS ACCORDIONS ---
+# --- a tab title becomes a tab label; the content boxes after it fill that tab's panel ---
+# --- on the finished page the labels are plain text, not headings, so the title's heading level is ignored ---
+# --- the first tab is the open one; Brightspace's own scripts do the clicking ---
+
+def is_tab_piece(box):
+    return box.get("dressing", "") in ("tab-title", "tab-content")
+
+def find_tab_runs(boxes):
+
+    runs = []                                # each run is (first index, index after the last)
+    start = None
+    for index, box in enumerate(boxes):
+        if is_tab_piece(box):
+            if start is None:
+                start = index                # a new stretch begins here
+        elif start is not None:
+            runs.append((start, index))      # a plain box (or an accordion piece) ends the stretch
+            start = None
+    if start is not None:
+        runs.append((start, len(boxes)))     # the stretch ran to the end of the page
+    return runs
+
+def tab_run_is_valid(run_boxes):
+
+    if run_boxes[0].get("dressing") != "tab-title":
+        return False                         # content with no title above it
+    for index, box in enumerate(run_boxes):
+        if box.get("dressing") == "tab-title":
+            if index + 1 >= len(run_boxes):
+                return False                 # a title at the very end has no content
+            if run_boxes[index + 1].get("dressing") == "tab-title":
+                return False                 # a title right before another title has no content
+    return True
+
+def make_tab_html(run_boxes):
+
+    labels = []
+    panels = []
+    index = 0
+    while index < len(run_boxes):
+        title_box = run_boxes[index]
+        index += 1
+        pieces = []
+        while index < len(run_boxes) and run_boxes[index].get("dressing") == "tab-content":
+            pieces.append(box_to_plain_html(run_boxes[index]))
+            index += 1
+        is_first = len(labels) == 0          # the first tab is the one that starts open
+        title = escape(clean_accordion_title(title_box["text"]), quote=False)
+        label_class = "list-group-item list-group-item-action" + (" active" if is_first else "")
+        panel_class = "tab-pane fade" + (" show active" if is_first else "")
+        labels.append(f'<a class="{label_class}" data-toggle="list" role="tab">{title}</a>')
+        panels.append(
+            f'<div class="{panel_class}" role="tabpanel" tabindex="0">\n'
+            + "\n".join(pieces) + '\n'
+            '</div>'
+        )
+    all_labels = "\n".join(labels)
+    all_panels = "\n".join(panels)
+    return (
+        '<!-- tabs begin -->\n'
+        '<div class="tabs-wrapper tabs-horizontal">\n'
+        '<div class="row">\n'
+        '<div class="col-12">\n'
+        '<div class="list-group flex-md-row text-center" role="tablist">\n'
+        f'{all_labels}\n'
+        '</div>\n'
+        '</div>\n'
+        '<div class="col-12">\n'
+        '<div class="tab-content">\n'
+        f'{all_panels}\n'
+        '</div>\n'
+        '</div>\n'
+        '</div>\n'
+        '</div>\n'
+        '<!-- tabs end -->'
+    )
+
 # --- THE INSTRUCTOR JUST MARKED A TITLE: IF THE BOX UNDER IT IS UNDRESSED, MAKE IT THE ACCORDION CONTENT ---
 # --- (a callout or an existing accordion mark is left alone; Needed Repairs speaks up if that causes trouble) ---
 
-def mark_content_after_title(boxes, title_index):
+def mark_content_after_title(boxes, title_index, content_name="accordion-content"):
 
     next_index = title_index + 1
     if next_index >= len(boxes):
         return False                                     # the title is the last box; nothing under it
     if boxes[next_index].get("dressing", "") != "":
         return False                                     # already dressed as something; not our call
-    boxes[next_index] = set_box_callout(boxes[next_index], "accordion-content")
+    boxes[next_index] = set_box_callout(boxes[next_index], content_name)
     return True
 
 # --- VIDEOS: ONE PASTED YOUTUBE OR VIMEO ADDRESS GIVES US BOTH THE EMBED ADDRESS AND THE DIRECT LINK ---
@@ -1419,17 +1498,24 @@ def number_video_links(html):
 
 def boxes_to_content(boxes):
 
-    run_ends = {}                           # where each accordion stretch starts -> where it ends
+    run_ends = {}                           # where each accordion or tab stretch starts -> (where it ends, which kind)
     for start, end in find_accordion_runs(boxes):
         if accordion_run_is_valid(boxes[start:end]):
-            run_ends[start] = end            # only stretches that follow the pattern become accordions
+            run_ends[start] = (end, "accordion")     # only stretches that follow the pattern become accordions
+    for start, end in find_tab_runs(boxes):
+        if tab_run_is_valid(boxes[start:end]):
+            run_ends[start] = (end, "tabs")          # ...and the same goes for tabs
 
     pieces = []
     index = 0
     while index < len(boxes):
         if index in run_ends:
-            pieces.append(make_accordion_html(boxes[index:run_ends[index]]))
-            index = run_ends[index]          # hop past all the boxes the accordion used
+            end, family = run_ends[index]
+            if family == "tabs":
+                pieces.append(make_tab_html(boxes[index:end]))
+            else:
+                pieces.append(make_accordion_html(boxes[index:end]))
+            index = end                      # hop past all the boxes the accordion or tab set used
         else:
             pieces.append(box_to_html(boxes[index]))
             index += 1
@@ -1588,7 +1674,7 @@ def find_issues(boxes):
 
     previous_level = None                           # the level of the heading before this one
     for number, box in enumerate(boxes, start=1):
-        if box["kind"] != "heading":
+        if box["kind"] != "heading" or box.get("dressing") == "tab-title":     # a tab title is plain text on the finished page, not a heading
             continue
         if previous_level is not None and box["level"] > previous_level + 1:     # going back UP any distance is fine; only skipping DOWN is a problem
             issues.append((number, f"Box {number}: heading jumps from Heading {previous_level} to Heading {box['level']}; "
@@ -1633,13 +1719,33 @@ def find_issues(boxes):
                                            "Mark a box under it as Accordion content"))
                 elif index + 1 == end:
                     next_dressing = boxes[end].get("dressing", "") if end < len(boxes) else ""
-                    if next_dressing != "":
+                    if next_dressing in [name for name, label, icon_class in CALLOUT_CHOICES]:
                         issues.append((number, f"Box {number}: accordion title is followed by a callout, which can't be accordion content; "
                                                "Move the callout, or set it back to None"))
                     else:
                         issues.append((number, f"Box {number}: accordion title has no content under it; "
                                                "Mark the box below it as Accordion content, or set this one back to None."))
 
+    for start, end in find_tab_runs(boxes):         # tabs follow the same rules as accordions: every title needs content, every content needs a title
+        for index in range(start, end):
+            number = index + 1
+            dressing = boxes[index].get("dressing", "")
+            if dressing == "tab-content" and index == start:
+                issues.append((number, f"Box {number}: tab content has no tab title above it; "
+                                       "Mark a heading above it as Tab title, or set this box back to None"))
+            if dressing == "tab-title":
+                if index + 1 < end and boxes[index + 1].get("dressing") == "tab-title":
+                    issues.append((number, f"Box {number}: tab title has no content before the next title; "
+                                           "Mark a box under it as Tab content"))
+                elif index + 1 == end:
+                    next_dressing = boxes[end].get("dressing", "") if end < len(boxes) else ""
+                    if next_dressing in [name for name, label, icon_class in CALLOUT_CHOICES]:
+                        issues.append((number, f"Box {number}: tab title is followed by a callout, which can't be tab content; "
+                                               "Move the callout, or set it back to None"))
+                    else:
+                        issues.append((number, f"Box {number}: tab title has no content under it; "
+                                               "Mark the box below it as Tab content, or set this one back to None."))
+    
     issues.sort(key=lambda pair: pair[0])           # sort() keeps ties in the order we added them
     return [sentence for number, sentence in issues]
 
