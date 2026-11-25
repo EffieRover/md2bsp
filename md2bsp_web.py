@@ -1602,6 +1602,16 @@ def find_links(text):
         rest = rest[close_paren_position + 1:]
     return links
 
+# --- IS THIS PARAGRAPH REALLY A HEADING WEARING BOLD? ---
+# --- yes if the whole thing is one bold phrase on one line; a bold sentence ending in a period is emphasis, not a heading ---
+
+def looks_like_fake_heading(text):
+
+    text = text.strip()
+    if not re.fullmatch(r"\*\*[^*\n]+\*\*", text):      # exactly one bold run and nothing else
+        return False
+    return not text[2:-2].strip().endswith(".")
+    
 # --- WALK THE BOXES AND LIST EVERYTHING AN INSTRUCTOR SHOULD FIX ------------------------------------------------------
 # --- returns a list of plain sentences, each starting with the box number so the instructor can find it ---
 # --- right now there's one kind of problem; this is where the other kinds will go ---
@@ -1616,6 +1626,15 @@ def find_issues(boxes):
         issues.append((0, "Page: needs a title, a Heading 1 at the top (OSCQR 21)"))
     for number in h1_numbers[1:]:                   # the first H1 is the title; every extra one gets flagged
         issues.append((number, f"Box {number}: only one Heading 1 per page, make this a Heading 2 (OSCQR 21)"))
+
+    previous_level = None                           # the level of the heading before this one
+    for number, box in enumerate(boxes, start=1):
+        if box["kind"] != "heading":
+            continue
+        if previous_level is not None and box["level"] > previous_level + 1:     # going back UP any distance is fine; only skipping DOWN is a problem
+            issues.append((number, f"Box {number}: heading jumps from Heading {previous_level} to Heading {box['level']}; "
+                                   f"use Heading {previous_level + 1} or fix the heading above (OSCQR 21)"))
+        previous_level = box["level"]
         
     for number, box in enumerate(boxes, start=1):   # people count from 1, not 0
         if box["kind"] == "video":                  # videos need a title and a length; their links are handled elsewhere
@@ -1630,6 +1649,8 @@ def find_issues(boxes):
             continue
         if box["kind"] == "paragraph":
             texts = [box["text"]]
+        if looks_like_fake_heading(box["text"]):
+            issues.append((number, f"Box {number}: this bold line looks like a heading; change its type to a Heading (OSCQR 21)"))
         elif box["kind"] == "list":
             texts = box["items"]
         else:
