@@ -1167,6 +1167,7 @@ def set_box_callout(box, callout_name):
 
 def dressing_choices(box):
 
+    choices = [("", "None")]
     if box["kind"] == "heading":
         choices.append(("accordion-title", "Accordion Title"))
         choices.append(("tab-title", "Tab Title"))
